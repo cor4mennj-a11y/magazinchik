@@ -8,10 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# =========================
-# НАСТРОЙКИ
-# =========================
-
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = "1417232861"
 
@@ -23,10 +19,6 @@ app.secret_key = os.environ.get(
 DATABASE = "shop.db"
 
 
-# =========================
-# JSON-ФИЛЬТР
-# =========================
-
 @app.template_filter("from_json")
 def from_json(value):
     try:
@@ -34,10 +26,6 @@ def from_json(value):
     except (TypeError, json.JSONDecodeError):
         return []
 
-
-# =========================
-# БАЗА ДАННЫХ
-# =========================
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -48,7 +36,6 @@ def get_db():
 def init_db():
     conn = get_db()
 
-    # Администраторы
     conn.execute("""
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +44,6 @@ def init_db():
         )
     """)
 
-    # Заказы
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,28 +57,82 @@ def init_db():
         )
     """)
 
-    # Создание первого администратора
-    # из переменных Render
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            price REAL NOT NULL DEFAULT 0,
+            image TEXT DEFAULT '',
+            emoji TEXT DEFAULT '🌸',
+            available INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    product_count = conn.execute(
+        "SELECT COUNT(*) AS count FROM products"
+    ).fetchone()["count"]
+
+    if product_count == 0:
+        default_products = [
+            (
+                "Красные розы",
+                "Красивый букет из свежих красных роз.",
+                3500,
+                "/static/image/rose.png.jpg",
+                "🌹",
+                1,
+            ),
+            (
+                "Весенний букет",
+                "Нежный букет из весенних цветов.",
+                2500,
+                "",
+                "🌷",
+                1,
+            ),
+            (
+                "Нежный букет",
+                "Идеальный подарок для любимого человека.",
+                3000,
+                "",
+                "🌸",
+                1,
+            ),
+            (
+                "Большой букет",
+                "Роскошный букет для особого случая.",
+                5000,
+                "",
+                "💐",
+                1,
+            ),
+        ]
+
+        conn.executemany(
+            """
+            INSERT INTO products
+            (name, description, price, image, emoji, available)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            default_products,
+        )
+
     admin_username = os.environ.get("ADMIN_USERNAME")
     admin_password = os.environ.get("ADMIN_PASSWORD")
 
     if admin_username and admin_password:
-
         existing_admin = conn.execute(
             """
             SELECT id
             FROM admins
             WHERE username = ?
             """,
-            (admin_username,)
+            (admin_username,),
         ).fetchone()
 
         if not existing_admin:
-
-            password_hash = generate_password_hash(
-                admin_password
-            )
-
             conn.execute(
                 """
                 INSERT INTO admins
@@ -101,51 +141,50 @@ def init_db():
                 """,
                 (
                     admin_username,
-                    password_hash
-                )
+                    generate_password_hash(admin_password),
+                ),
             )
 
     conn.commit()
     conn.close()
 
 
-# =========================
-# ПРОВЕРКА АДМИНИСТРАТОРА
-# =========================
-
 def admin_required(view):
-
     @wraps(view)
     def wrapped_view(*args, **kwargs):
-
         if "admin_id" not in session:
-            return redirect(
-                url_for("admin_login")
-            )
+            return redirect(url_for("admin_login"))
 
         return view(*args, **kwargs)
 
     return wrapped_view
 
 
-# =========================
-# ГЛАВНАЯ СТРАНИЦА
-# =========================
-
 @app.route("/")
 def home():
-    return render_template("index.html")
+    conn = get_db()
 
+    products = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE available = 1
+        ORDER BY id
+        """
+    ).fetchall()
 
-# =========================
-# СОЗДАНИЕ ЗАКАЗА
-# =========================
+    conn.close()
+
+    return render_template(
+        "index.html",
+        products=products
+    )
+
 
 @app.route("/send-order", methods=["POST"])
 def send_order():
 
     try:
-
         data = request.get_json()
 
         if not data:
@@ -160,7 +199,6 @@ def send_order():
         items = data.get("items", [])
         total = data.get("total", 0)
 
-        # Сохраняем заказ в базу
         conn = get_db()
 
         cursor = conn.execute(
@@ -194,7 +232,6 @@ def send_order():
         conn.commit()
         conn.close()
 
-        # Формируем сообщение для Telegram
         order_text = (
             f"🌸 НОВЫЙ ЗАКАЗ №{order_id}!\n\n"
         )
@@ -225,15 +262,11 @@ def send_order():
             f"\n💰 Итого: {total} ₽"
         )
 
-        # Проверяем Telegram
         if not TELEGRAM_BOT_TOKEN:
 
             return jsonify({
                 "success": False,
-                "error": (
-                    "TELEGRAM_BOT_TOKEN "
-                    "не найден на сервере"
-                )
+                "error": "TELEGRAM_BOT_TOKEN не найден на сервере"
             }), 500
 
         telegram_url = (
@@ -283,10 +316,6 @@ def send_order():
             "error": str(e)
         }), 500
 
-
-# =========================
-# ADMIN — ВХОД
-# =========================
 
 @app.route(
     "/admin/login",
@@ -344,10 +373,6 @@ def admin_login():
     )
 
 
-# =========================
-# ADMIN — ВЫХОД
-# =========================
-
 @app.route("/admin/logout")
 def admin_logout():
 
@@ -358,13 +383,55 @@ def admin_logout():
     )
 
 
-# =========================
-# ADMIN — ПАНЕЛЬ
-# =========================
-
 @app.route("/admin")
 @admin_required
 def admin_panel():
+
+    conn = get_db()
+
+    orders_count = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM orders
+        """
+    ).fetchone()["count"]
+
+    products_count = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM products
+        """
+    ).fetchone()["count"]
+
+    admins_count = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM admins
+        """
+    ).fetchone()["count"]
+
+    new_orders_count = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM orders
+        WHERE status = 'Новый'
+        """
+    ).fetchone()["count"]
+
+    conn.close()
+
+    return render_template(
+        "admin.html",
+        orders_count=orders_count,
+        products_count=products_count,
+        admins_count=admins_count,
+        new_orders_count=new_orders_count
+    )
+
+
+@app.route("/admin/orders")
+@admin_required
+def admin_orders():
 
     conn = get_db()
 
@@ -376,26 +443,13 @@ def admin_panel():
         """
     ).fetchall()
 
-    admins = conn.execute(
-        """
-        SELECT id, username
-        FROM admins
-        ORDER BY id
-        """
-    ).fetchall()
-
     conn.close()
 
     return render_template(
-        "admin.html",
-        orders=orders,
-        admins=admins
+        "admin_orders.html",
+        orders=orders
     )
 
-
-# =========================
-# ADMIN — ИЗМЕНЕНИЕ СТАТУСА
-# =========================
 
 @app.route(
     "/admin/order/<int:order_id>/status",
@@ -419,6 +473,7 @@ def update_order_status(order_id):
     ]
 
     if status not in allowed_statuses:
+
         status = "Новый"
 
     conn = get_db()
@@ -439,13 +494,281 @@ def update_order_status(order_id):
     conn.close()
 
     return redirect(
-        url_for("admin_panel")
+        url_for("admin_orders")
     )
 
 
-# =========================
-# ADMIN — ДОБАВЛЕНИЕ АДМИНА
-# =========================
+@app.route("/admin/products")
+@admin_required
+def admin_products():
+
+    conn = get_db()
+
+    products = conn.execute(
+        """
+        SELECT *
+        FROM products
+        ORDER BY id
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_products.html",
+        products=products
+    )
+
+
+@app.route(
+    "/admin/products/add",
+    methods=["POST"]
+)
+@admin_required
+def add_product():
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
+
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
+
+    image = request.form.get(
+        "image",
+        ""
+    ).strip()
+
+    emoji = request.form.get(
+        "emoji",
+        "🌸"
+    ).strip()
+
+    if not emoji:
+        emoji = "🌸"
+
+    try:
+
+        price = float(
+            request.form.get(
+                "price",
+                "0"
+            ).replace(",", ".")
+        )
+
+    except ValueError:
+
+        price = 0
+
+    available = (
+        1
+        if request.form.get(
+            "available"
+        ) == "on"
+        else 0
+    )
+
+    if not name:
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        INSERT INTO products
+        (
+            name,
+            description,
+            price,
+            image,
+            emoji,
+            available
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            name,
+            description,
+            price,
+            image,
+            emoji,
+            available
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(
+        url_for("admin_products")
+    )
+
+
+@app.route(
+    "/admin/products/<int:product_id>/edit",
+    methods=["GET", "POST"]
+)
+@admin_required
+def edit_product(product_id):
+
+    conn = get_db()
+
+    product = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE id = ?
+        """,
+        (product_id,)
+    ).fetchone()
+
+    if not product:
+
+        conn.close()
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        image = request.form.get(
+            "image",
+            ""
+        ).strip()
+
+        emoji = request.form.get(
+            "emoji",
+            "🌸"
+        ).strip()
+
+        if not emoji:
+            emoji = "🌸"
+
+        try:
+
+            price = float(
+                request.form.get(
+                    "price",
+                    "0"
+                ).replace(",", ".")
+            )
+
+        except ValueError:
+
+            price = 0
+
+        available = (
+            1
+            if request.form.get(
+                "available"
+            ) == "on"
+            else 0
+        )
+
+        if name:
+
+            conn.execute(
+                """
+                UPDATE products
+                SET
+                    name = ?,
+                    description = ?,
+                    price = ?,
+                    image = ?,
+                    emoji = ?,
+                    available = ?
+                WHERE id = ?
+                """,
+                (
+                    name,
+                    description,
+                    price,
+                    image,
+                    emoji,
+                    available,
+                    product_id
+                )
+            )
+
+            conn.commit()
+
+        conn.close()
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    conn.close()
+
+    return render_template(
+        "admin_edit_product.html",
+        product=product
+    )
+
+
+@app.route(
+    "/admin/products/<int:product_id>/delete",
+    methods=["POST"]
+)
+@admin_required
+def delete_product(product_id):
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        DELETE FROM products
+        WHERE id = ?
+        """,
+        (product_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(
+        url_for("admin_products")
+    )
+
+
+@app.route("/admin/admins")
+@admin_required
+def admin_admins():
+
+    conn = get_db()
+
+    admins = conn.execute(
+        """
+        SELECT id, username
+        FROM admins
+        ORDER BY id
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_admins.html",
+        admins=admins
+    )
+
 
 @app.route(
     "/admin/add-admin",
@@ -467,11 +790,11 @@ def add_admin():
     if not username or not password:
 
         return redirect(
-            url_for("admin_panel")
+            url_for("admin_admins")
         )
 
-    password_hash = generate_password_hash(
-        password
+    password_hash = (
+        generate_password_hash(password)
     )
 
     conn = get_db()
@@ -504,13 +827,9 @@ def add_admin():
         conn.close()
 
     return redirect(
-        url_for("admin_panel")
+        url_for("admin_admins")
     )
 
-
-# =========================
-# ADMIN — УДАЛЕНИЕ АДМИНА
-# =========================
 
 @app.route(
     "/admin/delete-admin/<int:admin_id>",
@@ -519,11 +838,12 @@ def add_admin():
 @admin_required
 def delete_admin(admin_id):
 
-    # Нельзя удалить самого себя
-    if admin_id == session.get("admin_id"):
+    if admin_id == session.get(
+        "admin_id"
+    ):
 
         return redirect(
-            url_for("admin_panel")
+            url_for("admin_admins")
         )
 
     conn = get_db()
@@ -540,20 +860,12 @@ def delete_admin(admin_id):
     conn.close()
 
     return redirect(
-        url_for("admin_panel")
+        url_for("admin_admins")
     )
 
 
-# =========================
-# СОЗДАЁМ БАЗУ ПРИ ЗАПУСКЕ
-# =========================
-
 init_db()
 
-
-# =========================
-# ЗАПУСК
-# =========================
 
 if __name__ == "__main__":
 
