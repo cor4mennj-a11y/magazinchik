@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -283,6 +284,7 @@
             align-items: center;
             overflow: hidden;
             flex-shrink: 0;
+            font-size: 30px;
         }
 
         .cart-item-icon img {
@@ -501,7 +503,6 @@
             Наши букеты 🌸
         </h2>
 
-
         <!-- SEARCH -->
 
         <div class="search-box">
@@ -519,7 +520,6 @@
         <!-- PRODUCTS -->
 
         <div class="products" id="products">
-
 
             <!-- PRODUCT 1 -->
 
@@ -804,7 +804,7 @@
                     class="button pay-button"
                     onclick="processOrder()"
                 >
-                    💳 Перейти к оплате
+                    📦 Отправить заказ
                 </button>
 
             </div>
@@ -862,7 +862,6 @@
                 });
 
             }
-
 
             updateCart();
 
@@ -1123,9 +1122,9 @@
         }
 
 
-        /* ===== ОФОРМЛЕНИЕ ЗАКАЗА ===== */
+        /* ===== ОТПРАВКА ЗАКАЗА В TELEGRAM ===== */
 
-        function processOrder() {
+        async function processOrder() {
 
             const name =
                 document
@@ -1178,21 +1177,141 @@
             }
 
 
-            /*
-                ЗДЕСЬ ПОКА НЕТ НАСТОЯЩЕЙ ОПЛАТЫ.
+            if (cart.length === 0) {
 
-                Следующим этапом сюда можно подключить
-                Stripe / другой платёжный сервис.
+                alert(
+                    "Корзина пустая 🌸"
+                );
 
-                Пока показываем сообщение.
-            */
+                return;
+            }
 
-            alert(
-                "Заказ подготовлен! 🌷\n\n" +
-                "Клиент: " + name + "\n" +
-                "Телефон: " + phone + "\n\n" +
-                "Следующим шагом подключим настоящую оплату."
-            );
+
+            let total = 0;
+
+
+            cart.forEach(item => {
+
+                total +=
+                    item.price * item.quantity;
+
+            });
+
+
+            const button =
+                document.querySelector(".pay-button");
+
+
+            button.disabled = true;
+
+            button.textContent =
+                "⏳ Отправляем заказ...";
+
+
+            try {
+
+                const response =
+                    await fetch("/send-order", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            name: name,
+
+                            phone: phone,
+
+                            address: address,
+
+                            items: cart,
+
+                            total: total
+
+                        })
+
+                    });
+
+
+                const data =
+                    await response.json();
+
+
+                if (data.success) {
+
+                    alert(
+                        "🌸 Заказ успешно отправлен!\n\n" +
+                        "Спасибо за заказ, " +
+                        name +
+                        "!"
+                    );
+
+
+                    cart = [];
+
+
+                    updateCart();
+
+
+                    document
+                        .getElementById("checkout-form")
+                        .classList
+                        .remove("active");
+
+
+                    document
+                        .getElementById("customer-name")
+                        .value = "";
+
+
+                    document
+                        .getElementById("customer-phone")
+                        .value = "";
+
+
+                    document
+                        .getElementById("customer-address")
+                        .value = "";
+
+
+                    closeCart();
+
+
+                } else {
+
+                    alert(
+                        "😔 Не удалось отправить заказ.\n\n" +
+                        "Попробуйте ещё раз."
+                    );
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "Ошибка отправки заказа:",
+                    error
+                );
+
+
+                alert(
+                    "😔 Произошла ошибка при отправке заказа.\n\n" +
+                    "Попробуйте ещё раз."
+                );
+
+
+            } finally {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "📦 Отправить заказ";
+
+            }
 
         }
 
@@ -1215,4 +1334,5 @@
     </script>
 
 </body>
+
 </html>
