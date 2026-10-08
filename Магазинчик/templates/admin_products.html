@@ -5,13 +5,10 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-    <title>Редактирование товара — Цветочный магазин</title>
-
+    <title>Товары — Админ-панель</title>
 
     <style>
 
@@ -19,473 +16,323 @@
             box-sizing: border-box;
         }
 
-
         body {
             margin: 0;
-
             font-family: Arial, sans-serif;
-
             background: #f7f4f6;
-
             color: #333;
         }
 
-
         .header {
             background: white;
-
             padding: 18px 30px;
-
             display: flex;
-
             justify-content: space-between;
-
             align-items: center;
-
             border-bottom: 1px solid #eee;
-
-            position: sticky;
-
-            top: 0;
-
-            z-index: 10;
         }
-
 
         .logo {
             font-size: 24px;
-
             font-weight: bold;
-
             color: #d63384;
         }
 
-
         .header-right {
             display: flex;
-
             align-items: center;
-
             gap: 15px;
         }
-
 
         .admin-name {
             color: #666;
         }
 
-
         .logout {
             text-decoration: none;
-
             color: white;
-
             background: #dc3545;
-
             padding: 9px 16px;
-
             border-radius: 8px;
         }
 
-
-        .logout:hover {
-            background: #bb2d3b;
-        }
-
-
         .container {
-            max-width: 850px;
-
+            max-width: 1200px;
             margin: 30px auto;
-
             padding: 0 20px;
         }
 
-
         .top {
             display: flex;
-
             justify-content: space-between;
-
             align-items: center;
-
             margin-bottom: 25px;
+            gap: 20px;
         }
-
 
         .top h1 {
             margin: 0 0 7px;
-
             font-size: 30px;
         }
 
-
         .top p {
             margin: 0;
-
             color: #777;
         }
 
-
         .back {
             text-decoration: none;
-
             background: white;
-
             color: #d63384;
-
             padding: 11px 18px;
-
             border-radius: 9px;
-
             border: 1px solid #f0d0df;
-
             font-weight: bold;
-
             white-space: nowrap;
         }
 
-
-        .back:hover {
-            background: #fff4f8;
-        }
-
-
         .message {
+            background: #e8f7ee;
+            color: #198754;
             padding: 13px 16px;
-
             border-radius: 10px;
-
             margin-bottom: 20px;
-
             font-weight: bold;
         }
-
-
-        .message.success {
-            background: #e8f7ee;
-
-            color: #198754;
-        }
-
 
         .box {
             background: white;
-
             border-radius: 16px;
-
-            padding: 30px;
-
-            box-shadow:
-                0 4px 15px rgba(0, 0, 0, 0.06);
-        }
-
-
-        .preview {
-            display: flex;
-
-            gap: 20px;
-
-            align-items: center;
-
+            padding: 25px;
             margin-bottom: 30px;
-
-            padding-bottom: 25px;
-
-            border-bottom: 1px solid #eee;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
 
-
-        .preview-image {
-            width: 150px;
-
-            height: 150px;
-
-            border-radius: 14px;
-
-            background: #f8eef3;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            overflow: hidden;
-
-            flex-shrink: 0;
+        .box h2 {
+            margin: 0 0 20px;
+            font-size: 22px;
         }
-
-
-        .preview-image img {
-            width: 100%;
-
-            height: 100%;
-
-            object-fit: cover;
-        }
-
-
-        .preview-emoji {
-            font-size: 65px;
-        }
-
-
-        .preview-info h2 {
-            margin: 0 0 8px;
-
-            font-size: 24px;
-        }
-
-
-        .preview-info p {
-            margin: 0;
-
-            color: #888;
-
-            line-height: 1.5;
-        }
-
 
         .form-grid {
             display: grid;
-
-            grid-template-columns:
-                1fr
-                1fr;
-
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
         }
-
 
         .field {
             display: flex;
-
             flex-direction: column;
-
-            gap: 8px;
+            gap: 7px;
         }
 
-
-        .field.full {
+        .full {
             grid-column: 1 / -1;
         }
 
-
         label {
             font-size: 14px;
-
             font-weight: bold;
-
             color: #555;
         }
-
 
         input,
         textarea {
             width: 100%;
-
             border: 1px solid #ddd;
-
             border-radius: 9px;
-
-            padding: 12px 13px;
-
+            padding: 12px;
             font-size: 15px;
-
-            font-family: inherit;
-
+            font-family: Arial, sans-serif;
             outline: none;
         }
-
 
         input:focus,
         textarea:focus {
             border-color: #d63384;
         }
 
-
         textarea {
-            min-height: 120px;
-
+            min-height: 90px;
             resize: vertical;
         }
 
-
         .file-input {
             padding: 10px;
-
             background: white;
-
             cursor: pointer;
         }
 
-
         .hint {
-            font-size: 12px;
-
             color: #999;
-
+            font-size: 12px;
             font-weight: normal;
         }
 
-
-        /* ТЕКУЩЕЕ ФОТО */
-
-        .current-photo {
-            margin-top: 5px;
-
-            background: #faf8f9;
-
-            border: 1px solid #eee;
-
-            border-radius: 10px;
-
-            padding: 12px;
-        }
-
-
-        .current-photo img {
-            display: block;
-
-            width: 100%;
-
-            max-width: 260px;
-
-            height: 180px;
-
-            object-fit: cover;
-
-            border-radius: 8px;
-
-            margin-bottom: 10px;
-        }
-
-
-        .no-photo {
-            padding: 25px 10px;
-
-            color: #999;
-
-            text-align: center;
-
-            font-size: 14px;
-        }
-
-
-        .remove-photo {
+        .checkbox {
             display: flex;
-
             align-items: center;
-
-            gap: 9px;
-
-            margin-top: 10px;
-        }
-
-
-        .remove-photo input {
-            width: auto;
-
-            transform: scale(1.15);
-        }
-
-
-        .remove-photo label {
-            cursor: pointer;
-
-            color: #dc3545;
-        }
-
-
-        .available-box {
-            background: #fff7fa;
-
-            border: 1px solid #f4d7e4;
-
-            border-radius: 10px;
-
-            padding: 15px;
-        }
-
-
-        .checkbox-row {
-            display: flex;
-
-            align-items: center;
-
             gap: 10px;
         }
 
-
-        .checkbox-row input {
+        .checkbox input {
             width: auto;
-
-            transform: scale(1.2);
         }
 
-
-        .checkbox-row label {
-            cursor: pointer;
-        }
-
-
-        .buttons {
-            display: flex;
-
-            gap: 12px;
-
-            margin-top: 30px;
-
-            padding-top: 25px;
-
-            border-top: 1px solid #eee;
-        }
-
-
-        .save-button {
+        .button {
             border: none;
-
             background: #d63384;
-
             color: white;
-
-            padding: 13px 24px;
-
+            padding: 12px 20px;
             border-radius: 9px;
-
             font-size: 15px;
-
             font-weight: bold;
-
             cursor: pointer;
+            margin-top: 20px;
         }
 
-
-        .save-button:hover {
+        .button:hover {
             background: #b82d70;
         }
 
+        .products-title {
+            margin-bottom: 18px;
+        }
 
-        .cancel-button {
-            text-decoration: none;
+        .products-title h2 {
+            margin: 0 0 5px;
+        }
 
+        .products-title p {
+            margin: 0;
+            color: #888;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .product {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .product-image {
+            height: 260px;
+            background: #f8eef3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .emoji {
+            font-size: 80px;
+        }
+
+        .product-content {
+            padding: 20px;
+        }
+
+        .product-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: #777;
+            line-height: 1.5;
+            min-height: 45px;
+            margin-bottom: 12px;
+        }
+
+        .price {
+            font-size: 22px;
+            color: #d63384;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .status-on {
+            background: #e8f7ee;
+            color: #198754;
+        }
+
+        .status-off {
             background: #f1f1f1;
+            color: #777;
+        }
 
-            color: #555;
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
 
-            padding: 13px 24px;
-
-            border-radius: 9px;
-
+        .edit {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            background: #fff0f6;
+            color: #d63384;
+            padding: 11px;
+            border-radius: 8px;
             font-weight: bold;
         }
 
-
-        .cancel-button:hover {
-            background: #e5e5e5;
+        .delete-form {
+            flex: 1;
         }
 
+        .delete {
+            width: 100%;
+            border: none;
+            background: #fff0f0;
+            color: #dc3545;
+            padding: 11px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .empty {
+            background: white;
+            padding: 50px 20px;
+            text-align: center;
+            border-radius: 16px;
+            color: #888;
+        }
+
+        .empty-icon {
+            font-size: 55px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 850px) {
+
+            .products {
+                grid-template-columns: 1fr;
+            }
+
+        }
 
         @media (max-width: 650px) {
 
@@ -493,77 +340,37 @@
                 padding: 15px;
             }
 
-
             .logo {
                 font-size: 19px;
             }
-
 
             .admin-name {
                 display: none;
             }
 
-
             .container {
-                margin-top: 20px;
-
                 padding: 0 15px;
             }
 
-
             .top {
                 flex-direction: column;
-
                 align-items: flex-start;
-
-                gap: 15px;
             }
-
-
-            .top h1 {
-                font-size: 26px;
-            }
-
-
-            .box {
-                padding: 20px;
-            }
-
-
-            .preview {
-                align-items: flex-start;
-
-                flex-direction: column;
-            }
-
-
-            .preview-image {
-                width: 100%;
-
-                height: 230px;
-            }
-
 
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
-
-            .field.full {
+            .full {
                 grid-column: auto;
             }
 
-
-            .buttons {
-                flex-direction: column;
+            .product-image {
+                height: 240px;
             }
 
-
-            .save-button,
-            .cancel-button {
-                width: 100%;
-
-                text-align: center;
+            .actions {
+                flex-direction: column;
             }
 
         }
@@ -582,13 +389,11 @@
         🌸 Цветочный магазин
     </div>
 
-
     <div class="header-right">
 
         <span class="admin-name">
             👤 {{ session.get('admin_username', 'Администратор') }}
         </span>
-
 
         <a
             href="{{ url_for('admin_logout') }}"
@@ -610,22 +415,19 @@
 
         <div>
 
-            <h1>
-                ✏️ Редактирование товара
-            </h1>
+            <h1>🌸 Товары</h1>
 
             <p>
-                Измените информацию и фотографию букета.
+                Добавляйте букеты и фотографии с устройства.
             </p>
 
         </div>
 
-
         <a
-            href="{{ url_for('admin_products') }}"
+            href="{{ url_for('admin_panel') }}"
             class="back"
         >
-            ← К товарам
+            ← В админ-панель
         </a>
 
     </div>
@@ -638,7 +440,7 @@
 
         {% for category, message in messages %}
 
-            <div class="message {{ category }}">
+            <div class="message">
                 {{ message }}
             </div>
 
@@ -648,72 +450,18 @@
 
 
 
+    <!-- ДОБАВЛЕНИЕ ТОВАРА -->
+
     <div class="box">
 
+        <h2>
+            ➕ Добавить новый товар
+        </h2>
 
-        <!-- ПРЕДПРОСМОТР -->
-
-        <div class="preview">
-
-
-            <div class="preview-image">
-
-
-                {% if product['image'] %}
-
-                    <img
-                        src="{{ product['image'] }}"
-                        alt="{{ product['name'] }}"
-                        onerror="
-                            this.style.display='none';
-                            this.nextElementSibling.style.display='block';
-                        "
-                    >
-
-                    <div
-                        class="preview-emoji"
-                        style="display:none;"
-                    >
-                        {{ product['emoji'] }}
-                    </div>
-
-                {% else %}
-
-                    <div class="preview-emoji">
-                        {{ product['emoji'] }}
-                    </div>
-
-                {% endif %}
-
-
-            </div>
-
-
-            <div class="preview-info">
-
-                <h2>
-                    {{ product['name'] }}
-                </h2>
-
-                <p>
-                    Товар №{{ product['id'] }}
-                </p>
-
-            </div>
-
-
-        </div>
-
-
-
-        <!-- ФОРМА -->
 
         <form
             method="POST"
-            action="{{ url_for(
-                'edit_product',
-                product_id=product['id']
-            ) }}"
+            action="{{ url_for('add_product') }}"
             enctype="multipart/form-data"
         >
 
@@ -724,19 +472,18 @@
                 <div class="field">
 
                     <label for="name">
-                        Название товара
+                        Название
                     </label>
 
                     <input
                         id="name"
                         type="text"
                         name="name"
-                        value="{{ product['name'] }}"
+                        placeholder="Например: Красные розы"
                         required
                     >
 
                 </div>
-
 
 
                 <div class="field">
@@ -749,14 +496,13 @@
                         id="price"
                         type="number"
                         name="price"
-                        value="{{ product['price'] }}"
                         min="0"
                         step="0.01"
+                        placeholder="3500"
                         required
                     >
 
                 </div>
-
 
 
                 <div class="field full">
@@ -768,18 +514,16 @@
                     <textarea
                         id="description"
                         name="description"
-                    >{{ product['description'] }}</textarea>
+                        placeholder="Описание букета..."
+                    ></textarea>
 
                 </div>
 
 
-
-                <!-- ФОТО -->
-
-                <div class="field full">
+                <div class="field">
 
                     <label for="image">
-                        📷 Загрузить новую фотографию
+                        📷 Фотография
                     </label>
 
                     <input
@@ -791,70 +535,11 @@
                     >
 
                     <span class="hint">
-                        Новая фотография заменит текущую.
                         JPG, JPEG, PNG или WEBP. Максимум 8 МБ.
                     </span>
 
-
-                    {% if product['image'] %}
-
-                        <div class="current-photo">
-
-                            <strong>
-                                Текущая фотография:
-                            </strong>
-
-
-                            <img
-                                src="{{ product['image'] }}"
-                                alt="{{ product['name'] }}"
-                                onerror="
-                                    this.style.display='none';
-                                "
-                            >
-
-
-                            {% if product['image'].startswith(
-                                '/static/uploads/'
-                            ) %}
-
-                                <div class="remove-photo">
-
-                                    <input
-                                        type="checkbox"
-                                        id="remove_image"
-                                        name="remove_image"
-                                    >
-
-
-                                    <label for="remove_image">
-                                        🗑️ Удалить текущую фотографию
-                                    </label>
-
-                                </div>
-
-                            {% endif %}
-
-
-                        </div>
-
-                    {% else %}
-
-                        <div class="current-photo">
-
-                            <div class="no-photo">
-                                📷 Фотография пока не загружена
-                            </div>
-
-                        </div>
-
-                    {% endif %}
-
                 </div>
 
-
-
-                <!-- EMOJI -->
 
                 <div class="field">
 
@@ -866,45 +551,31 @@
                         id="emoji"
                         type="text"
                         name="emoji"
-                        value="{{ product['emoji'] }}"
+                        value="🌸"
+                        placeholder="🌹"
                     >
 
                     <span class="hint">
-                        Показывается, если фотографии нет.
+                        Будет показан, если фотографии нет.
                     </span>
 
                 </div>
 
 
+                <div class="field full">
 
-                <!-- ДОСТУПНОСТЬ -->
+                    <div class="checkbox">
 
-                <div class="field">
+                        <input
+                            id="available"
+                            type="checkbox"
+                            name="available"
+                            checked
+                        >
 
-                    <label>
-                        Доступность товара
-                    </label>
-
-
-                    <div class="available-box">
-
-                        <div class="checkbox-row">
-
-                            <input
-                                type="checkbox"
-                                id="available"
-                                name="available"
-                                {% if product['available'] %}
-                                    checked
-                                {% endif %}
-                            >
-
-
-                            <label for="available">
-                                ✅ Показывать товар на сайте
-                            </label>
-
-                        </div>
+                        <label for="available">
+                            ✅ Показывать товар на сайте
+                        </label>
 
                     </div>
 
@@ -914,33 +585,188 @@
             </div>
 
 
-
-            <div class="buttons">
-
-
-                <button
-                    type="submit"
-                    class="save-button"
-                >
-                    💾 Сохранить изменения
-                </button>
-
-
-                <a
-                    href="{{ url_for('admin_products') }}"
-                    class="cancel-button"
-                >
-                    Отмена
-                </a>
-
-
-            </div>
+            <button
+                type="submit"
+                class="button"
+            >
+                ➕ Добавить товар
+            </button>
 
 
         </form>
 
+    </div>
+
+
+
+    <!-- ЗАГОЛОВОК СПИСКА -->
+
+    <div class="products-title">
+
+        <h2>
+            Все товары
+        </h2>
+
+        <p>
+            Всего товаров: {{ products|length }}
+        </p>
 
     </div>
+
+
+
+    <!-- ЦИКЛ ТОВАРОВ -->
+
+    {% if products %}
+
+        <div class="products">
+
+            {% for product in products %}
+
+                <div class="product">
+
+
+                    <!-- ФОТО -->
+
+                    <div class="product-image">
+
+                        {% if product.image %}
+
+                            <img
+                                src="{{ product.image }}"
+                                alt="{{ product.name }}"
+                            >
+
+                        {% else %}
+
+                            <div class="emoji">
+                                {{ product.emoji }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+
+                    <!-- ИНФОРМАЦИЯ -->
+
+                    <div class="product-content">
+
+
+                        <div class="product-name">
+                            {{ product.name }}
+                        </div>
+
+
+                        {% if product.description %}
+
+                            <div class="description">
+                                {{ product.description }}
+                            </div>
+
+                        {% else %}
+
+                            <div class="description">
+                                Описание не добавлено.
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="price">
+                            {{ product.price|round(2) }} ₽
+                        </div>
+
+
+                        {% if product.available %}
+
+                            <div class="status status-on">
+                                ✅ Показывается на сайте
+                            </div>
+
+                        {% else %}
+
+                            <div class="status status-off">
+                                👁️ Скрыт с сайта
+                            </div>
+
+                        {% endif %}
+
+
+
+                        <!-- КНОПКИ -->
+
+                        <div class="actions">
+
+
+                            <a
+                                href="{{ url_for(
+                                    'edit_product',
+                                    product_id=product.id
+                                ) }}"
+                                class="edit"
+                            >
+                                ✏️ Изменить
+                            </a>
+
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'delete_product',
+                                    product_id=product.id
+                                ) }}"
+                                class="delete-form"
+                                onsubmit="return confirm(
+                                    'Удалить этот товар?'
+                                );"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="delete"
+                                >
+                                    🗑️ Удалить
+                                </button>
+
+                            </form>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+
+        <div class="empty">
+
+            <div class="empty-icon">
+                🌷
+            </div>
+
+            <h2>
+                Товаров пока нет
+            </h2>
+
+            <p>
+                Добавьте первый товар выше.
+            </p>
+
+        </div>
+
+
+    {% endif %}
 
 
 </main>
