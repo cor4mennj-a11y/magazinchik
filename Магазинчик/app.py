@@ -15,44 +15,69 @@ def home():
 
 @app.route("/send-order", methods=["POST"])
 def send_order():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    name = data.get("name", "")
-    phone = data.get("phone", "")
-    address = data.get("address", "")
-    items = data.get("items", [])
-    total = data.get("total", 0)
+        name = data.get("name", "")
+        phone = data.get("phone", "")
+        address = data.get("address", "")
+        items = data.get("items", [])
+        total = data.get("total", 0)
 
-    order_text = "🌸 НОВЫЙ ЗАКАЗ!\n\n"
-    order_text += f"👤 Имя: {name}\n"
-    order_text += f"📞 Телефон: {phone}\n"
-    order_text += f"📍 Адрес: {address}\n\n"
+        order_text = "🌸 НОВЫЙ ЗАКАЗ!\n\n"
+        order_text += f"👤 Имя: {name}\n"
+        order_text += f"📞 Телефон: {phone}\n"
+        order_text += f"📍 Адрес: {address}\n\n"
 
-    order_text += "🛍 Товары:\n"
+        order_text += "🛍 Товары:\n"
 
-    for item in items:
-        order_text += (
-            f"• {item['name']} — "
-            f"{item['quantity']} шт. × "
-            f"{item['price']} ₽\n"
+        for item in items:
+            order_text += (
+                f"• {item['name']} — "
+                f"{item['quantity']} шт. × "
+                f"{item['price']} ₽\n"
+            )
+
+        order_text += f"\n💰 Итого: {total} ₽"
+
+        # Проверяем, есть ли токен
+        if not TELEGRAM_BOT_TOKEN:
+            return jsonify({
+                "success": False,
+                "error": "TELEGRAM_BOT_TOKEN не найден на сервере"
+            }), 500
+
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+        response = requests.post(
+            url,
+            json={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": order_text
+            },
+            timeout=10
         )
 
-    order_text += f"\n💰 Итого: {total} ₽"
+        print("TELEGRAM STATUS:", response.status_code)
+        print("TELEGRAM RESPONSE:", response.text)
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        if response.ok:
+            return jsonify({
+                "success": True
+            })
 
-    response = requests.post(
-        url,
-        json={
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": order_text
-        }
-    )
+        return jsonify({
+            "success": False,
+            "error": response.text
+        }), 500
 
-    if response.ok:
-        return jsonify({"success": True})
+    except Exception as e:
+        print("ERROR:", str(e))
 
-    return jsonify({"success": False}), 500
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
