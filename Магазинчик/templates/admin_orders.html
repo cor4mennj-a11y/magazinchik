@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Заказы — Админ-панель</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f4f6;
+            color: #333;
+        }
+
+
+        /* ШАПКА */
+
+        .header {
+            background: white;
+            padding: 18px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            border-bottom: 1px solid #eee;
+
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d63384;
+        }
+
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+
+        .admin-name {
+            color: #666;
+        }
+
+
+        .logout {
+            text-decoration: none;
+            color: white;
+            background: #dc3545;
+
+            padding: 9px 16px;
+
+            border-radius: 8px;
+        }
+
+
+        .logout:hover {
+            background: #bb2d3b;
+        }
+
+
+        /* ОСНОВНАЯ ОБЛАСТЬ */
+
+        .container {
+            max-width: 1250px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+
+        .top h1 {
+            margin: 0 0 7px;
+            font-size: 30px;
+        }
+
+
+        .top p {
+            margin: 0;
+            color: #777;
+        }
+
+
+        .back {
+            text-decoration: none;
+
+            background: white;
+            color: #d63384;
+
+            padding: 11px 18px;
+
+            border-radius: 9px;
+
+            border: 1px solid #f0d0df;
+
+            font-weight: bold;
+        }
+
+
+        .back:hover {
+            background: #fff4f8;
+        }
+
+
+        /* ЗАКАЗЫ */
+
+        .orders {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+
+        .order {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding-bottom: 18px;
+
+            border-bottom: 1px solid #eee;
+
+            margin-bottom: 20px;
+        }
+
+
+        .order-number {
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+
+        .date {
+            color: #999;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+
+        .order-content {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr
+                1.3fr;
+
+            gap: 25px;
+        }
+
+
+        .info-title {
+            color: #999;
+            font-size: 13px;
+
+            margin-bottom: 6px;
+        }
+
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+
+            word-break: break-word;
+        }
+
+
+        .items {
+            margin-top: 5px;
+        }
+
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 9px 0;
+
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+
+        .item-name {
+            font-weight: 500;
+        }
+
+
+        .item-price {
+            white-space: nowrap;
+            color: #666;
+        }
+
+
+        .total {
+            margin-top: 15px;
+
+            font-size: 20px;
+            font-weight: bold;
+
+            color: #d63384;
+        }
+
+
+        /* СТАТУС */
+
+        .status-block {
+            margin-top: 22px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #eee;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+        }
+
+
+        .status-label {
+            font-weight: bold;
+        }
+
+
+        .status-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+
+        select {
+            border: 1px solid #ddd;
+
+            background: white;
+
+            padding: 10px 13px;
+
+            border-radius: 8px;
+
+            font-size: 15px;
+
+            cursor: pointer;
+        }
+
+
+        .save {
+            border: none;
+
+            background: #d63384;
+            color: white;
+
+            padding: 10px 17px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+        }
+
+
+        .save:hover {
+            background: #b82d70;
+        }
+
+
+        /* ПУСТО */
+
+        .empty {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 60px 20px;
+
+            text-align: center;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .empty-icon {
+            font-size: 55px;
+            margin-bottom: 15px;
+        }
+
+
+        .empty h2 {
+            margin: 0 0 10px;
+        }
+
+
+        .empty p {
+            color: #888;
+            margin: 0;
+        }
+
+
+        /* МОБИЛЬНАЯ ВЕРСИЯ */
+
+        @media (max-width: 850px) {
+
+            .order-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .status-block {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .status-form {
+                width: 100%;
+            }
+
+            select {
+                flex: 1;
+            }
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .header {
+                padding: 15px;
+            }
+
+
+            .logo {
+                font-size: 19px;
+            }
+
+
+            .admin-name {
+                display: none;
+            }
+
+
+            .container {
+                margin-top: 20px;
+                padding: 0 15px;
+            }
+
+
+            .top {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+
+            .top h1 {
+                font-size: 26px;
+            }
+
+
+            .order {
+                padding: 18px;
+            }
+
+
+            .order-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+
+            .status-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+
+            select,
+            .save {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ШАПКА -->
+
+<header class="header">
+
+    <div class="logo">
+        🌸 Цветочный магазин
+    </div>
+
+
+    <div class="header-right">
+
+        <span class="admin-name">
+            👤 {{ session.get('admin_username', 'Администратор') }}
+        </span>
+
+
+        <a
+            href="{{ url_for('admin_logout') }}"
+            class="logout"
+        >
+            Выйти
+        </a>
+
+    </div>
+
+</header>
+
+
+
+<!-- ОСНОВНАЯ ОБЛАСТЬ -->
+
+<main class="container">
+
+
+    <div class="top">
+
+        <div>
+
+            <h1>
+                📦 Заказы
+            </h1>
+
+            <p>
+                Здесь находятся все заказы покупателей.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('admin_panel') }}"
+            class="back"
+        >
+            ← В админ-панель
+        </a>
+
+    </div>
+
+
+
+    {% if orders %}
+
+        <div class="orders">
+
+
+            {% for order in orders %}
+
+                <div class="order">
+
+
+                    <!-- ВЕРХ ЗАКАЗА -->
+
+                    <div class="order-header">
+
+                        <div>
+
+                            <div class="order-number">
+                                Заказ №{{ order['id'] }}
+                            </div>
+
+
+                            <div class="date">
+                                📅 {{ order['created_at'] }}
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- ИНФОРМАЦИЯ -->
+
+                    <div class="order-content">
+
+
+                        <!-- КЛИЕНТ -->
+
+                        <div>
+
+                            <div class="info-title">
+                                👤 Клиент
+                            </div>
+
+                            <div class="info-value">
+                                {{ order['name'] or 'Не указано' }}
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ТЕЛЕФОН -->
+
+                        <div>
+
+                            <div class="info-title">
+                                📞 Телефон
+                            </div>
+
+                            <div class="info-value">
+                                {{ order['phone'] or 'Не указан' }}
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- АДРЕС -->
+
+                        <div>
+
+                            <div class="info-title">
+                                📍 Адрес доставки
+                            </div>
+
+                            <div class="info-value">
+                                {{ order['address'] or 'Не указан' }}
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- ТОВАРЫ -->
+
+                    <div style="margin-top: 25px;">
+
+                        <div class="info-title">
+                            🛍 Товары
+                        </div>
+
+
+                        <div class="items">
+
+                            {% for item in order['items'] | from_json %}
+
+                                <div class="item">
+
+                                    <div class="item-name">
+
+                                        {{ item.get('name', 'Товар') }}
+
+                                        × {{ item.get('quantity', 0) }}
+
+                                    </div>
+
+
+                                    <div class="item-price">
+
+                                        {{ item.get('price', 0) }} ₽
+
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <div class="total">
+
+                            💰 Итого:
+                            {{ order['total'] }} ₽
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- СТАТУС -->
+
+                    <div class="status-block">
+
+
+                        <div class="status-label">
+
+                            📌 Статус заказа
+
+                        </div>
+
+
+                        <form
+                            method="POST"
+                            action="{{ url_for(
+                                'update_order_status',
+                                order_id=order['id']
+                            ) }}"
+                            class="status-form"
+                        >
+
+
+                            <select name="status">
+
+
+                                <option
+                                    value="Новый"
+                                    {% if order['status'] == 'Новый' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    🔔 Новый
+                                </option>
+
+
+                                <option
+                                    value="В обработке"
+                                    {% if order['status'] == 'В обработке' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    ⚙️ В обработке
+                                </option>
+
+
+                                <option
+                                    value="Готов"
+                                    {% if order['status'] == 'Готов' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    ✅ Готов
+                                </option>
+
+
+                                <option
+                                    value="Доставляется"
+                                    {% if order['status'] == 'Доставляется' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    🚚 Доставляется
+                                </option>
+
+
+                                <option
+                                    value="Выполнен"
+                                    {% if order['status'] == 'Выполнен' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    🎉 Выполнен
+                                </option>
+
+
+                                <option
+                                    value="Отменён"
+                                    {% if order['status'] == 'Отменён' %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    ❌ Отменён
+                                </option>
+
+
+                            </select>
+
+
+                            <button
+                                type="submit"
+                                class="save"
+                            >
+                                Сохранить
+                            </button>
+
+
+                        </form>
+
+                    </div>
+
+
+                </div>
+
+            {% endfor %}
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- ЕСЛИ ЗАКАЗОВ НЕТ -->
+
+        <div class="empty">
+
+            <div class="empty-icon">
+                📦
+            </div>
+
+            <h2>
+                Заказов пока нет
+            </h2>
+
+            <p>
+                Когда покупатель оформит заказ,
+                он появится здесь.
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>
