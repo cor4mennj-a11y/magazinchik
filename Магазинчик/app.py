@@ -1,4 +1,3 @@
-```python
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import os
 import requests
@@ -25,7 +24,7 @@ DATABASE = "shop.db"
 
 
 # =========================
-# JSON-ФИЛЬТР ДЛЯ ШАБЛОНОВ
+# JSON-ФИЛЬТР
 # =========================
 
 @app.template_filter("from_json")
@@ -49,7 +48,7 @@ def get_db():
 def init_db():
     conn = get_db()
 
-    # Таблица администраторов
+    # Администраторы
     conn.execute("""
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +57,7 @@ def init_db():
         )
     """)
 
-    # Таблица заказов
+    # Заказы
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +71,7 @@ def init_db():
         )
     """)
 
-    # Первый администратор создаётся
+    # Создание первого администратора
     # из переменных Render
     admin_username = os.environ.get("ADMIN_USERNAME")
     admin_password = os.environ.get("ADMIN_PASSWORD")
@@ -111,7 +110,7 @@ def init_db():
 
 
 # =========================
-# ПРОВЕРКА АВТОРИЗАЦИИ
+# ПРОВЕРКА АДМИНИСТРАТОРА
 # =========================
 
 def admin_required(view):
@@ -161,10 +160,7 @@ def send_order():
         items = data.get("items", [])
         total = data.get("total", 0)
 
-        # -------------------------
-        # СОХРАНЯЕМ ЗАКАЗ В БАЗУ
-        # -------------------------
-
+        # Сохраняем заказ в базу
         conn = get_db()
 
         cursor = conn.execute(
@@ -198,10 +194,7 @@ def send_order():
         conn.commit()
         conn.close()
 
-        # -------------------------
-        # TELEGRAM
-        # -------------------------
-
+        # Формируем сообщение для Telegram
         order_text = (
             f"🌸 НОВЫЙ ЗАКАЗ №{order_id}!\n\n"
         )
@@ -232,10 +225,7 @@ def send_order():
             f"\n💰 Итого: {total} ₽"
         )
 
-        # -------------------------
-        # ПРОВЕРЯЕМ TELEGRAM TOKEN
-        # -------------------------
-
+        # Проверяем Telegram
         if not TELEGRAM_BOT_TOKEN:
 
             return jsonify({
@@ -454,8 +444,7 @@ def update_order_status(order_id):
 
 
 # =========================
-# ADMIN — ДОБАВЛЕНИЕ
-# АДМИНИСТРАТОРА
+# ADMIN — ДОБАВЛЕНИЕ АДМИНА
 # =========================
 
 @app.route(
@@ -520,8 +509,7 @@ def add_admin():
 
 
 # =========================
-# ADMIN — УДАЛЕНИЕ
-# АДМИНИСТРАТОРА
+# ADMIN — УДАЛЕНИЕ АДМИНА
 # =========================
 
 @app.route(
@@ -557,7 +545,7 @@ def delete_admin(admin_id):
 
 
 # =========================
-# ИНИЦИАЛИЗАЦИЯ БАЗЫ
+# СОЗДАЁМ БАЗУ ПРИ ЗАПУСКЕ
 # =========================
 
 init_db()
@@ -574,4 +562,3 @@ if __name__ == "__main__":
         port=5000,
         debug=True
     )
-```
