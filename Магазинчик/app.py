@@ -26,29 +26,23 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 
-# =========================
-# НАСТРОЙКИ
-# =========================
+# =========================================================
+# ОСНОВНЫЕ НАСТРОЙКИ
+# =========================================================
 
-TELEGRAM_BOT_TOKEN = os.environ.get(
-    "TELEGRAM_BOT_TOKEN"
-)
-
-TELEGRAM_CHAT_ID = "1417232861"
-
-
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "temporary-secret-key"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
 )
 
 
-DATABASE = "shop.db"
+DATABASE = os.path.join(
+    BASE_DIR,
+    "shop.db"
+)
 
 
-# Папка, куда будут сохраняться фотографии
 UPLOAD_FOLDER = os.path.join(
-    app.root_path,
+    BASE_DIR,
     "static",
     "uploads"
 )
@@ -56,11 +50,36 @@ UPLOAD_FOLDER = os.path.join(
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Максимальный размер фотографии — 8 МБ
+# Максимальный размер одной загрузки — 8 МБ
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 
 
-# Разрешённые форматы фотографий
+# =========================================================
+# TELEGRAM
+# =========================================================
+
+TELEGRAM_BOT_TOKEN = os.environ.get(
+    "TELEGRAM_BOT_TOKEN"
+)
+
+
+TELEGRAM_CHAT_ID = "1417232861"
+
+
+# =========================================================
+# SECRET KEY
+# =========================================================
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "temporary-secret-key"
+)
+
+
+# =========================================================
+# РАЗРЕШЁННЫЕ ФОТО
+# =========================================================
+
 ALLOWED_EXTENSIONS = {
     "jpg",
     "jpeg",
@@ -69,29 +88,35 @@ ALLOWED_EXTENSIONS = {
 }
 
 
-# Создаём папку для загрузок
+# Создаём папку для фотографий
 os.makedirs(
     UPLOAD_FOLDER,
     exist_ok=True
 )
 
 
-# =========================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-# =========================
+# =========================================================
+# ФУНКЦИИ ДЛЯ ФОТОГРАФИЙ
+# =========================================================
 
 def allowed_file(filename):
 
     if not filename:
         return False
 
+
     if "." not in filename:
         return False
 
+
     extension = (
-        filename.rsplit(".", 1)[1]
+        filename.rsplit(
+            ".",
+            1
+        )[1]
         .lower()
     )
+
 
     return extension in ALLOWED_EXTENSIONS
 
@@ -101,78 +126,110 @@ def save_uploaded_file(file):
     if not file:
         return ""
 
+
     if not file.filename:
         return ""
 
-    if not allowed_file(file.filename):
+
+    if not allowed_file(
+        file.filename
+    ):
         return ""
+
 
     original_name = secure_filename(
         file.filename
     )
 
+
     if not original_name:
         return ""
 
+
     extension = (
-        original_name.rsplit(".", 1)[1]
+        original_name.rsplit(
+            ".",
+            1
+        )[1]
         .lower()
     )
+
 
     filename = (
         f"{uuid.uuid4().hex}.{extension}"
     )
 
+
     filepath = os.path.join(
-        app.config["UPLOAD_FOLDER"],
+        UPLOAD_FOLDER,
         filename
     )
 
+
     file.save(filepath)
 
-    return f"/static/uploads/{filename}"
+
+    return (
+        "/static/uploads/"
+        + filename
+    )
 
 
-def delete_uploaded_file(image_path):
+def delete_uploaded_file(
+    image_path
+):
 
     if not image_path:
         return
 
-    # Удаляем только фотографии,
-    # загруженные в нашу папку.
+
+    # Удаляем только файлы,
+    # находящиеся в нашей папке uploads
     if not image_path.startswith(
         "/static/uploads/"
     ):
         return
 
+
     filename = os.path.basename(
         image_path
     )
 
+
     filepath = os.path.join(
-        app.config["UPLOAD_FOLDER"],
+        UPLOAD_FOLDER,
         filename
     )
 
+
     try:
-        if os.path.isfile(filepath):
+
+        if os.path.isfile(
+            filepath
+        ):
+
             os.remove(filepath)
+
     except Exception as e:
+
         print(
-            "Не удалось удалить фотографию:",
+            "Ошибка удаления фотографии:",
             e
         )
 
 
-# =========================
-# JSON FILTER
-# =========================
+# =========================================================
+# JINJA FILTER
+# =========================================================
 
 @app.template_filter("from_json")
 def from_json(value):
 
     try:
-        return json.loads(value)
+
+        return json.loads(
+            value
+        )
 
     except (
         TypeError,
@@ -182,9 +239,9 @@ def from_json(value):
         return []
 
 
-# =========================
+# =========================================================
 # DATABASE
-# =========================
+# =========================================================
 
 def get_db():
 
@@ -192,23 +249,27 @@ def get_db():
         DATABASE
     )
 
+
     conn.row_factory = sqlite3.Row
+
 
     return conn
 
 
 def init_db():
 
-    # На всякий случай ещё раз создаём папку
     os.makedirs(
         UPLOAD_FOLDER,
         exist_ok=True
     )
 
+
     conn = get_db()
 
 
+    # =====================================================
     # АДМИНИСТРАТОРЫ
+    # =====================================================
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS admins (
@@ -219,7 +280,9 @@ def init_db():
     """)
 
 
+    # =====================================================
     # ЗАКАЗЫ
+    # =====================================================
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -235,7 +298,9 @@ def init_db():
     """)
 
 
+    # =====================================================
     # ТОВАРЫ
+    # =====================================================
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
@@ -251,8 +316,9 @@ def init_db():
     """)
 
 
-    # ДОБАВЛЯЕМ НАЧАЛЬНЫЕ ТОВАРЫ,
-    # ЕСЛИ БАЗА ПУСТАЯ
+    # =====================================================
+    # НАЧАЛЬНЫЕ ТОВАРЫ
+    # =====================================================
 
     product_count = conn.execute(
         """
@@ -322,11 +388,14 @@ def init_db():
         )
 
 
-    # СОЗДАНИЕ ПЕРВОГО АДМИНА
+    # =====================================================
+    # ПЕРВЫЙ АДМИНИСТРАТОР
+    # =====================================================
 
     admin_username = os.environ.get(
         "ADMIN_USERNAME"
     )
+
 
     admin_password = os.environ.get(
         "ADMIN_PASSWORD"
@@ -373,32 +442,39 @@ def init_db():
     conn.close()
 
 
-# =========================
+# =========================================================
 # ПРОВЕРКА АДМИНА
-# =========================
+# =========================================================
 
 def admin_required(view):
 
     @wraps(view)
-    def wrapped_view(*args, **kwargs):
+    def wrapped_view(
+        *args,
+        **kwargs
+    ):
 
         if "admin_id" not in session:
 
             return redirect(
-                url_for("admin_login")
+                url_for(
+                    "admin_login"
+                )
             )
+
 
         return view(
             *args,
             **kwargs
         )
 
+
     return wrapped_view
 
 
-# =========================
-# ГЛАВНАЯ
-# =========================
+# =========================================================
+# ГЛАВНАЯ СТРАНИЦА МАГАЗИНА
+# =========================================================
 
 @app.route("/")
 def home():
@@ -425,9 +501,9 @@ def home():
     )
 
 
-# =========================
+# =========================================================
 # ОТПРАВКА ЗАКАЗА
-# =========================
+# =========================================================
 
 @app.route(
     "/send-order",
@@ -451,28 +527,36 @@ def send_order():
         name = data.get(
             "name",
             ""
-        )
+        ).strip()
+
 
         phone = data.get(
             "phone",
             ""
-        )
+        ).strip()
+
 
         address = data.get(
             "address",
             ""
-        )
+        ).strip()
+
 
         items = data.get(
             "items",
             []
         )
 
+
         total = data.get(
             "total",
             0
         )
 
+
+        # =================================================
+        # СОХРАНЯЕМ ЗАКАЗ В БАЗУ
+        # =================================================
 
         conn = get_db()
 
@@ -509,8 +593,13 @@ def send_order():
 
         conn.commit()
 
+
         conn.close()
 
+
+        # =================================================
+        # ТЕКСТ TELEGRAM
+        # =================================================
 
         order_text = (
             f"🌸 НОВЫЙ ЗАКАЗ №{order_id}!\n\n"
@@ -532,7 +621,9 @@ def send_order():
         )
 
 
-        order_text += "🛍 Товары:\n"
+        order_text += (
+            "🛍 Товары:\n"
+        )
 
 
         for item in items:
@@ -549,17 +640,25 @@ def send_order():
         )
 
 
+        # =================================================
+        # TELEGRAM
+        # =================================================
+
         if not TELEGRAM_BOT_TOKEN:
 
             return jsonify({
                 "success": False,
-                "error": "TELEGRAM_BOT_TOKEN не найден на сервере"
+                "error": (
+                    "TELEGRAM_BOT_TOKEN "
+                    "не найден на сервере"
+                )
             }), 500
 
 
         telegram_url = (
             "https://api.telegram.org/"
-            f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            f"bot{TELEGRAM_BOT_TOKEN}"
+            "/sendMessage"
         )
 
 
@@ -612,9 +711,9 @@ def send_order():
         }), 500
 
 
-# =========================
-# LOGIN
-# =========================
+# =========================================================
+# АДМИН — LOGIN
+# =========================================================
 
 @app.route(
     "/admin/login",
@@ -664,13 +763,16 @@ def admin_login():
                 admin["id"]
             )
 
+
             session["admin_username"] = (
                 admin["username"]
             )
 
 
             return redirect(
-                url_for("admin_panel")
+                url_for(
+                    "admin_panel"
+                )
             )
 
 
@@ -685,9 +787,9 @@ def admin_login():
     )
 
 
-# =========================
-# LOGOUT
-# =========================
+# =========================================================
+# АДМИН — LOGOUT
+# =========================================================
 
 @app.route("/admin/logout")
 def admin_logout():
@@ -696,13 +798,15 @@ def admin_logout():
 
 
     return redirect(
-        url_for("admin_login")
+        url_for(
+            "admin_login"
+        )
     )
 
 
-# =========================
+# =========================================================
 # ГЛАВНАЯ АДМИНКИ
-# =========================
+# =========================================================
 
 @app.route("/admin")
 @admin_required
@@ -710,6 +814,10 @@ def admin_panel():
 
     conn = get_db()
 
+
+    # =====================================================
+    # ОБЩИЕ СЧЁТЧИКИ
+    # =====================================================
 
     orders_count = conn.execute(
         """
@@ -744,21 +852,127 @@ def admin_panel():
     ).fetchone()["count"]
 
 
+    # =====================================================
+    # СЕГОДНЯ — КОЛИЧЕСТВО ЗАКАЗОВ
+    # =====================================================
+
+    today_orders = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM orders
+        WHERE date(created_at) = date('now')
+        """
+    ).fetchone()["count"]
+
+
+    # =====================================================
+    # СЕГОДНЯ — ВЫРУЧКА
+    #
+    # Отменённые заказы не считаются.
+    # =====================================================
+
+    today_revenue = conn.execute(
+        """
+        SELECT COALESCE(
+            SUM(total),
+            0
+        ) AS total
+        FROM orders
+        WHERE date(created_at) = date('now')
+        AND status != 'Отменён'
+        """
+    ).fetchone()["total"]
+
+
+    # =====================================================
+    # ТЕКУЩИЙ МЕСЯЦ — КОЛИЧЕСТВО ЗАКАЗОВ
+    # =====================================================
+
+    month_orders = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM orders
+        WHERE strftime(
+            '%Y-%m',
+            created_at
+        ) = strftime(
+            '%Y-%m',
+            'now'
+        )
+        """
+    ).fetchone()["count"]
+
+
+    # =====================================================
+    # ТЕКУЩИЙ МЕСЯЦ — ВЫРУЧКА
+    #
+    # Отменённые заказы не считаются.
+    # =====================================================
+
+    month_revenue = conn.execute(
+        """
+        SELECT COALESCE(
+            SUM(total),
+            0
+        ) AS total
+        FROM orders
+        WHERE strftime(
+            '%Y-%m',
+            created_at
+        ) = strftime(
+            '%Y-%m',
+            'now'
+        )
+        AND status != 'Отменён'
+        """
+    ).fetchone()["total"]
+
+
+    # =====================================================
+    # ВЫРУЧКА ЗА ВСЁ ВРЕМЯ
+    # =====================================================
+
+    total_revenue = conn.execute(
+        """
+        SELECT COALESCE(
+            SUM(total),
+            0
+        ) AS total
+        FROM orders
+        WHERE status != 'Отменён'
+        """
+    ).fetchone()["total"]
+
+
     conn.close()
 
 
     return render_template(
         "admin.html",
+
         orders_count=orders_count,
+
         products_count=products_count,
+
         admins_count=admins_count,
-        new_orders_count=new_orders_count
+
+        new_orders_count=new_orders_count,
+
+        today_orders=today_orders,
+
+        today_revenue=today_revenue,
+
+        month_orders=month_orders,
+
+        month_revenue=month_revenue,
+
+        total_revenue=total_revenue
     )
 
 
-# =========================
+# =========================================================
 # ЗАКАЗЫ
-# =========================
+# =========================================================
 
 @app.route("/admin/orders")
 @admin_required
@@ -785,9 +999,9 @@ def admin_orders():
     )
 
 
-# =========================
-# СТАТУС ЗАКАЗА
-# =========================
+# =========================================================
+# ИЗМЕНЕНИЕ СТАТУСА ЗАКАЗА
+# =========================================================
 
 @app.route(
     "/admin/order/<int:order_id>/status",
@@ -803,12 +1017,19 @@ def update_order_status(order_id):
 
 
     allowed_statuses = [
+
         "Новый",
+
         "В обработке",
+
         "Готов",
+
         "Доставляется",
+
         "Выполнен",
+
         "Отменён"
+
     ]
 
 
@@ -839,13 +1060,15 @@ def update_order_status(order_id):
 
 
     return redirect(
-        url_for("admin_orders")
+        url_for(
+            "admin_orders"
+        )
     )
 
 
-# =========================
+# =========================================================
 # ТОВАРЫ
-# =========================
+# =========================================================
 
 @app.route("/admin/products")
 @admin_required
@@ -872,9 +1095,9 @@ def admin_products():
     )
 
 
-# =========================
-# ДОБАВИТЬ ТОВАР
-# =========================
+# =========================================================
+# ДОБАВЛЕНИЕ ТОВАРА
+# =========================================================
 
 @app.route(
     "/admin/products/add",
@@ -906,7 +1129,9 @@ def add_product():
         emoji = "🌸"
 
 
+    # =====================================================
     # ЦЕНА
+    # =====================================================
 
     try:
 
@@ -914,7 +1139,10 @@ def add_product():
             request.form.get(
                 "price",
                 "0"
-            ).replace(",", ".")
+            ).replace(
+                ",",
+                "."
+            )
         )
 
     except ValueError:
@@ -922,7 +1150,9 @@ def add_product():
         price = 0
 
 
+    # =====================================================
     # ДОСТУПНОСТЬ
+    # =====================================================
 
     available = (
         1
@@ -933,7 +1163,9 @@ def add_product():
     )
 
 
+    # =====================================================
     # ФОТО
+    # =====================================================
 
     image = ""
 
@@ -943,17 +1175,34 @@ def add_product():
     )
 
 
-    if uploaded_file and uploaded_file.filename:
+    if (
+        uploaded_file
+        and uploaded_file.filename
+    ):
 
         image = save_uploaded_file(
             uploaded_file
         )
 
 
+        if not image:
+
+            flash(
+                "Фотография имеет неподдерживаемый формат.",
+                "error"
+            )
+
+
+    # =====================================================
+    # СОХРАНЕНИЕ ТОВАРА
+    # =====================================================
+
     if not name:
 
         return redirect(
-            url_for("admin_products")
+            url_for(
+                "admin_products"
+            )
         )
 
 
@@ -996,13 +1245,15 @@ def add_product():
 
 
     return redirect(
-        url_for("admin_products")
+        url_for(
+            "admin_products"
+        )
     )
 
 
-# =========================
+# =========================================================
 # РЕДАКТИРОВАНИЕ ТОВАРА
-# =========================
+# =========================================================
 
 @app.route(
     "/admin/products/<int:product_id>/edit",
@@ -1030,9 +1281,15 @@ def edit_product(product_id):
 
 
         return redirect(
-            url_for("admin_products")
+            url_for(
+                "admin_products"
+            )
         )
 
+
+    # =====================================================
+    # POST — СОХРАНЕНИЕ
+    # =====================================================
 
     if request.method == "POST":
 
@@ -1059,7 +1316,9 @@ def edit_product(product_id):
             emoji = "🌸"
 
 
+        # =================================================
         # ЦЕНА
+        # =================================================
 
         try:
 
@@ -1067,7 +1326,10 @@ def edit_product(product_id):
                 request.form.get(
                     "price",
                     "0"
-                ).replace(",", ".")
+                ).replace(
+                    ",",
+                    "."
+                )
             )
 
         except ValueError:
@@ -1075,7 +1337,9 @@ def edit_product(product_id):
             price = 0
 
 
+        # =================================================
         # ДОСТУПНОСТЬ
+        # =================================================
 
         available = (
             1
@@ -1086,12 +1350,19 @@ def edit_product(product_id):
         )
 
 
-        # ТЕКУЩЕЕ ФОТО
+        # =================================================
+        # ТЕКУЩАЯ ФОТОГРАФИЯ
+        # =================================================
 
-        image = product["image"] or ""
+        image = (
+            product["image"]
+            or ""
+        )
 
 
-        # УДАЛЕНИЕ ФОТО
+        # =================================================
+        # УДАЛИТЬ ФОТО
+        # =================================================
 
         remove_image = (
             request.form.get(
@@ -1109,7 +1380,9 @@ def edit_product(product_id):
             image = ""
 
 
+        # =================================================
         # НОВОЕ ФОТО
+        # =================================================
 
         uploaded_file = request.files.get(
             "image"
@@ -1128,14 +1401,25 @@ def edit_product(product_id):
 
             if new_image:
 
-                # Удаляем старую загруженную
-                # фотографию
                 delete_uploaded_file(
                     image
                 )
 
+
                 image = new_image
 
+
+            else:
+
+                flash(
+                    "Новая фотография имеет неподдерживаемый формат.",
+                    "error"
+                )
+
+
+        # =================================================
+        # СОХРАНЕНИЕ
+        # =================================================
 
         if name:
 
@@ -1176,9 +1460,15 @@ def edit_product(product_id):
 
 
         return redirect(
-            url_for("admin_products")
+            url_for(
+                "admin_products"
+            )
         )
 
+
+    # =====================================================
+    # GET
+    # =====================================================
 
     conn.close()
 
@@ -1189,9 +1479,9 @@ def edit_product(product_id):
     )
 
 
-# =========================
-# УДАЛИТЬ ТОВАР
-# =========================
+# =========================================================
+# УДАЛЕНИЕ ТОВАРА
+# =========================================================
 
 @app.route(
     "/admin/products/<int:product_id>/delete",
@@ -1241,13 +1531,15 @@ def delete_product(product_id):
 
 
     return redirect(
-        url_for("admin_products")
+        url_for(
+            "admin_products"
+        )
     )
 
 
-# =========================
+# =========================================================
 # АДМИНИСТРАТОРЫ
-# =========================
+# =========================================================
 
 @app.route("/admin/admins")
 @admin_required
@@ -1258,7 +1550,9 @@ def admin_admins():
 
     admins = conn.execute(
         """
-        SELECT id, username
+        SELECT
+            id,
+            username
         FROM admins
         ORDER BY id
         """
@@ -1274,9 +1568,9 @@ def admin_admins():
     )
 
 
-# =========================
+# =========================================================
 # ДОБАВИТЬ АДМИНИСТРАТОРА
-# =========================
+# =========================================================
 
 @app.route(
     "/admin/add-admin",
@@ -1297,10 +1591,15 @@ def add_admin():
     )
 
 
-    if not username or not password:
+    if (
+        not username
+        or not password
+    ):
 
         return redirect(
-            url_for("admin_admins")
+            url_for(
+                "admin_admins"
+            )
         )
 
 
@@ -1337,7 +1636,10 @@ def add_admin():
 
     except sqlite3.IntegrityError:
 
-        pass
+        flash(
+            "Такой логин уже существует.",
+            "error"
+        )
 
 
     finally:
@@ -1346,13 +1648,15 @@ def add_admin():
 
 
     return redirect(
-        url_for("admin_admins")
+        url_for(
+            "admin_admins"
+        )
     )
 
 
-# =========================
+# =========================================================
 # УДАЛИТЬ АДМИНИСТРАТОРА
-# =========================
+# =========================================================
 
 @app.route(
     "/admin/delete-admin/<int:admin_id>",
@@ -1361,12 +1665,15 @@ def add_admin():
 @admin_required
 def delete_admin(admin_id):
 
+    # Нельзя удалить самого себя
     if admin_id == session.get(
         "admin_id"
     ):
 
         return redirect(
-            url_for("admin_admins")
+            url_for(
+                "admin_admins"
+            )
         )
 
 
@@ -1388,16 +1695,18 @@ def delete_admin(admin_id):
 
 
     return redirect(
-        url_for("admin_admins")
+        url_for(
+            "admin_admins"
+        )
     )
 
 
-# =========================
-# ОШИБКА СЛИШКОМ БОЛЬШОГО ФАЙЛА
-# =========================
+# =========================================================
+# ОШИБКА — ФОТО БОЛЬШЕ 8 МБ
+# =========================================================
 
 @app.errorhandler(413)
-def too_large(e):
+def too_large(error):
 
     flash(
         "Фотография слишком большая. Максимальный размер — 8 МБ.",
@@ -1406,16 +1715,22 @@ def too_large(e):
 
 
     return redirect(
-        url_for("admin_products")
+        url_for(
+            "admin_products"
+        )
     )
 
 
-# =========================
-# ЗАПУСК
-# =========================
+# =========================================================
+# ИНИЦИАЛИЗАЦИЯ БАЗЫ
+# =========================================================
 
 init_db()
 
+
+# =========================================================
+# ЗАПУСК
+# =========================================================
 
 if __name__ == "__main__":
 
