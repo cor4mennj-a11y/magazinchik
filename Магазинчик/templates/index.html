@@ -39,6 +39,11 @@
         }
 
 
+        body.modal-open {
+            overflow: hidden;
+        }
+
+
         button,
         input,
         textarea {
@@ -249,8 +254,6 @@
             max-width: 550px;
 
             margin: 0 auto 35px;
-
-            position: relative;
         }
 
 
@@ -279,7 +282,9 @@
         }
 
 
-        /* КАРТОЧКИ */
+        /* =========================
+           PRODUCTS
+        ========================= */
 
         .products {
             display: grid;
@@ -304,6 +309,10 @@
             transition:
                 transform 0.2s,
                 box-shadow 0.2s;
+
+            cursor: pointer;
+
+            position: relative;
         }
 
 
@@ -312,6 +321,44 @@
 
             box-shadow:
                 0 12px 30px rgba(0, 0, 0, 0.10);
+        }
+
+
+        .product-card::after {
+            content: "Подробнее";
+
+            position: absolute;
+
+            top: 12px;
+
+            right: 12px;
+
+            background: rgba(255, 255, 255, 0.94);
+
+            color: #d63384;
+
+            padding: 6px 9px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            font-weight: bold;
+
+            opacity: 0;
+
+            transform: translateY(-4px);
+
+            transition: 0.2s;
+
+            pointer-events: none;
+        }
+
+
+        .product-card:hover::after {
+            opacity: 1;
+
+            transform: translateY(0);
         }
 
 
@@ -336,6 +383,13 @@
             height: 100%;
 
             object-fit: cover;
+
+            transition: transform 0.3s;
+        }
+
+
+        .product-card:hover .product-image img {
+            transform: scale(1.03);
         }
 
 
@@ -405,6 +459,10 @@
             cursor: pointer;
 
             font-weight: bold;
+
+            position: relative;
+
+            z-index: 5;
         }
 
 
@@ -491,7 +549,197 @@
 
 
         /* =========================
-           CART PANEL
+           PRODUCT MODAL
+        ========================= */
+
+        .product-modal-overlay {
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 400;
+
+            background: rgba(0, 0, 0, 0.45);
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+        }
+
+
+        .product-modal-overlay.show {
+            display: flex;
+        }
+
+
+        .product-modal {
+            width: 100%;
+
+            max-width: 850px;
+
+            max-height: 90vh;
+
+            overflow-y: auto;
+
+            background: white;
+
+            border-radius: 20px;
+
+            position: relative;
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.20);
+        }
+
+
+        .product-modal-close {
+            position: absolute;
+
+            top: 15px;
+
+            right: 15px;
+
+            z-index: 10;
+
+            width: 42px;
+
+            height: 42px;
+
+            border: none;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.95);
+
+            cursor: pointer;
+
+            font-size: 23px;
+
+            box-shadow:
+                0 3px 10px rgba(0, 0, 0, 0.12);
+        }
+
+
+        .product-modal-grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+        }
+
+
+        .product-modal-image {
+            min-height: 430px;
+
+            background: #fbeef4;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            overflow: hidden;
+
+            border-radius:
+                20px
+                0
+                0
+                20px;
+        }
+
+
+        .product-modal-image img {
+            width: 100%;
+
+            height: 100%;
+
+            min-height: 430px;
+
+            object-fit: cover;
+        }
+
+
+        .product-modal-emoji {
+            font-size: 120px;
+        }
+
+
+        .product-modal-content {
+            padding: 40px 35px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+        }
+
+
+        .product-modal-content h2 {
+            font-size: 32px;
+
+            margin: 0 0 15px;
+
+            color: #333;
+        }
+
+
+        .product-modal-description {
+            color: #666;
+
+            font-size: 16px;
+
+            line-height: 1.7;
+
+            margin-bottom: 25px;
+
+            white-space: pre-line;
+        }
+
+
+        .product-modal-price {
+            font-size: 28px;
+
+            color: #d63384;
+
+            font-weight: bold;
+
+            margin-bottom: 20px;
+        }
+
+
+        .modal-add-button {
+            width: 100%;
+
+            border: none;
+
+            background: #d63384;
+
+            color: white;
+
+            padding: 15px;
+
+            border-radius: 11px;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+
+        .modal-add-button:hover {
+            background: #b82d70;
+        }
+
+
+        /* =========================
+           CART
         ========================= */
 
         .overlay {
@@ -1033,6 +1281,43 @@
         }
 
 
+        @media (max-width: 800px) {
+
+            .product-modal-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .product-modal-image {
+                min-height: 300px;
+
+                border-radius:
+                    20px
+                    20px
+                    0
+                    0;
+            }
+
+
+            .product-modal-image img {
+                min-height: 300px;
+
+                max-height: 400px;
+            }
+
+
+            .product-modal-content {
+                padding: 25px;
+            }
+
+
+            .product-modal-content h2 {
+                font-size: 27px;
+            }
+
+        }
+
+
         @media (max-width: 750px) {
 
             .nav {
@@ -1112,6 +1397,23 @@
 
             .hero h1 {
                 font-size: 32px;
+            }
+
+
+            .product-modal-overlay {
+                padding: 10px;
+            }
+
+
+            .product-modal {
+                max-height: 94vh;
+
+                border-radius: 16px;
+            }
+
+
+            .product-modal-content {
+                padding: 22px;
             }
 
         }
@@ -1209,7 +1511,7 @@
         </h2>
 
         <p>
-            Выберите свой идеальный букет
+            Нажмите на карточку, чтобы узнать больше о букете
         </p>
 
     </div>
@@ -1246,7 +1548,14 @@
 
                 <article
                     class="product-card"
-                    data-name="{{ product['name']|lower }}"
+                    data-name="{{ product.name|lower }}"
+                    data-id="{{ product.id }}"
+                    data-product-name="{{ product.name }}"
+                    data-product-price="{{ product.price }}"
+                    data-product-image="{{ product.image }}"
+                    data-product-emoji="{{ product.emoji }}"
+                    data-product-description="{{ product.description }}"
+                    onclick="openProductModalFromCard(this)"
                 >
 
 
@@ -1255,11 +1564,11 @@
                     <div class="product-image">
 
 
-                        {% if product['image'] %}
+                        {% if product.image %}
 
                             <img
-                                src="{{ product['image'] }}"
-                                alt="{{ product['name'] }}"
+                                src="{{ product.image }}"
+                                alt="{{ product.name }}"
                                 onerror="
                                     this.style.display='none';
                                     this.nextElementSibling.style.display='block';
@@ -1269,9 +1578,9 @@
 
                             <div
                                 class="product-emoji"
-                                style="display: none;"
+                                style="display:none;"
                             >
-                                {{ product['emoji'] }}
+                                {{ product.emoji }}
                             </div>
 
 
@@ -1279,7 +1588,7 @@
 
 
                             <div class="product-emoji">
-                                {{ product['emoji'] }}
+                                {{ product.emoji }}
                             </div>
 
 
@@ -1296,15 +1605,15 @@
 
 
                         <h3>
-                            {{ product['name'] }}
+                            {{ product.name }}
                         </h3>
 
 
                         <div class="product-description">
 
-                            {% if product['description'] %}
+                            {% if product.description %}
 
-                                {{ product['description'] }}
+                                {{ product.description }}
 
                             {% else %}
 
@@ -1322,7 +1631,7 @@
 
                             <div class="product-price">
 
-                                {{ product['price']|round(2) }} ₽
+                                {{ product.price|round(2) }} ₽
 
                             </div>
 
@@ -1330,10 +1639,16 @@
                             <button
                                 type="button"
                                 class="add-button"
-                                data-name="{{ product['name'] }}"
-                                data-price="{{ product['price'] }}"
-                                data-image="{{ product['image'] }}"
-                                data-emoji="{{ product['emoji'] }}"
+                                data-name="{{ product.name }}"
+                                data-price="{{ product.price }}"
+                                data-image="{{ product.image }}"
+                                data-emoji="{{ product.emoji }}"
+                                onclick="event.stopPropagation(); addToCart(
+                                    this.dataset.name,
+                                    this.dataset.price,
+                                    this.dataset.image,
+                                    this.dataset.emoji
+                                )"
                             >
                                 🛒 В корзину
                             </button>
@@ -1353,7 +1668,7 @@
             <div
                 class="no-products"
                 id="noSearchResults"
-                style="display: none;"
+                style="display:none;"
             >
 
                 <div class="no-products-icon">
@@ -1472,7 +1787,91 @@
 
 
 <!-- =========================
-     OVERLAY
+     PRODUCT MODAL
+========================= -->
+
+<div
+    class="product-modal-overlay"
+    id="productModalOverlay"
+    onclick="closeProductModalOnOverlay(event)"
+>
+
+
+    <div
+        class="product-modal"
+        onclick="event.stopPropagation()"
+    >
+
+
+        <button
+            type="button"
+            class="product-modal-close"
+            onclick="closeProductModal()"
+        >
+            ×
+        </button>
+
+
+        <div class="product-modal-grid">
+
+
+            <!-- ФОТО -->
+
+            <div
+                class="product-modal-image"
+                id="productModalImage"
+            ></div>
+
+
+
+            <!-- ИНФОРМАЦИЯ -->
+
+            <div class="product-modal-content">
+
+
+                <h2 id="productModalName">
+                    Букет
+                </h2>
+
+
+                <div
+                    class="product-modal-description"
+                    id="productModalDescription"
+                ></div>
+
+
+                <div
+                    class="product-modal-price"
+                    id="productModalPrice"
+                >
+                    0 ₽
+                </div>
+
+
+                <button
+                    type="button"
+                    class="modal-add-button"
+                    id="productModalAddButton"
+                >
+                    🛒 Добавить в корзину
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================
+     CART OVERLAY
 ========================= -->
 
 <div
@@ -1484,7 +1883,7 @@
 
 
 <!-- =========================
-     КОРЗИНА
+     CART
 ========================= -->
 
 <aside
@@ -1554,7 +1953,7 @@
 
 
 <!-- =========================
-     МОДАЛЬНОЕ ОКНО ЗАКАЗА
+     ORDER MODAL
 ========================= -->
 
 <div
@@ -1697,7 +2096,6 @@
        КОРЗИНА
     ========================= */
 
-
     let cart = [];
 
 
@@ -1734,7 +2132,6 @@
 
 
         updateCart();
-
 
         openCart();
 
@@ -1872,18 +2269,7 @@
                         <img
                             src="${escapeHtml(item.image)}"
                             alt=""
-                            onerror="
-                                this.style.display='none';
-                                this.nextElementSibling.style.display='block';
-                            "
                         >
-
-                        <div
-                            class="cart-item-emoji"
-                            style="display:none;"
-                        >
-                            ${escapeHtml(item.emoji)}
-                        </div>
 
                     `;
 
@@ -1998,35 +2384,19 @@
     function escapeHtml(value) {
 
         return String(value)
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
 
     }
 
 
 
     /* =========================
-       КОРЗИНА — ОТКРЫТЬ/ЗАКРЫТЬ
+       КОРЗИНА ОТКРЫТЬ
     ========================= */
-
 
     function openCart() {
 
@@ -2040,8 +2410,9 @@
             .classList.add("show");
 
 
-        document.body.style.overflow =
-            "hidden";
+        document.body.classList.add(
+            "modal-open"
+        );
 
     }
 
@@ -2059,8 +2430,200 @@
             .classList.remove("show");
 
 
-        document.body.style.overflow =
-            "";
+        document.body.classList.remove(
+            "modal-open"
+        );
+
+    }
+
+
+
+    /* =========================
+       КАРТОЧКА ТОВАРА
+    ========================= */
+
+    function openProductModalFromCard(card) {
+
+        const name =
+            card.dataset.productName || "";
+
+
+        const price =
+            card.dataset.productPrice || "0";
+
+
+        const image =
+            card.dataset.productImage || "";
+
+
+        const emoji =
+            card.dataset.productEmoji || "🌸";
+
+
+        const description =
+            card.dataset.productDescription || "";
+
+
+        openProductModal(
+            name,
+            price,
+            image,
+            emoji,
+            description
+        );
+
+    }
+
+
+
+    function openProductModal(
+        name,
+        price,
+        image,
+        emoji,
+        description
+    ) {
+
+        const modal =
+            document.getElementById(
+                "productModalOverlay"
+            );
+
+
+        const imageContainer =
+            document.getElementById(
+                "productModalImage"
+            );
+
+
+        const nameElement =
+            document.getElementById(
+                "productModalName"
+            );
+
+
+        const descriptionElement =
+            document.getElementById(
+                "productModalDescription"
+            );
+
+
+        const priceElement =
+            document.getElementById(
+                "productModalPrice"
+            );
+
+
+        const addButton =
+            document.getElementById(
+                "productModalAddButton"
+            );
+
+
+        nameElement.textContent =
+            name;
+
+
+        descriptionElement.textContent =
+            description ||
+            "Красивый свежий букет для особенного момента.";
+
+
+        priceElement.textContent =
+            formatPrice(price) + " ₽";
+
+
+        if (image) {
+
+            imageContainer.innerHTML = `
+
+                <img
+                    src="${escapeHtml(image)}"
+                    alt="${escapeHtml(name)}"
+                    onerror="
+                        this.style.display='none';
+                        this.nextElementSibling.style.display='block';
+                    "
+                >
+
+                <div
+                    class="product-modal-emoji"
+                    style="display:none;"
+                >
+                    ${escapeHtml(emoji)}
+                </div>
+
+            `;
+
+        } else {
+
+            imageContainer.innerHTML = `
+
+                <div class="product-modal-emoji">
+                    ${escapeHtml(emoji)}
+                </div>
+
+            `;
+
+        }
+
+
+        addButton.onclick = function() {
+
+            addToCart(
+                name,
+                price,
+                image,
+                emoji
+            );
+
+
+            closeProductModal();
+
+        };
+
+
+        modal.classList.add("show");
+
+        document.body.classList.add(
+            "modal-open"
+        );
+
+    }
+
+
+
+    function closeProductModal() {
+
+        document
+            .getElementById(
+                "productModalOverlay"
+            )
+            .classList.remove("show");
+
+
+        document.body.classList.remove(
+            "modal-open"
+        );
+
+    }
+
+
+
+    function closeProductModalOnOverlay(
+        event
+    ) {
+
+        if (
+            event.target ===
+            document.getElementById(
+                "productModalOverlay"
+            )
+        ) {
+
+            closeProductModal();
+
+        }
 
     }
 
@@ -2069,7 +2632,6 @@
     /* =========================
        ОФОРМЛЕНИЕ ЗАКАЗА
     ========================= */
-
 
     function openOrderModal() {
 
@@ -2095,8 +2657,9 @@
         closeCart();
 
 
-        document.body.style.overflow =
-            "hidden";
+        document.body.classList.add(
+            "modal-open"
+        );
 
     }
 
@@ -2109,8 +2672,9 @@
             .classList.remove("show");
 
 
-        document.body.style.overflow =
-            "";
+        document.body.classList.remove(
+            "modal-open"
+        );
 
     }
 
@@ -2154,9 +2718,6 @@
         );
 
 
-        summary.innerHTML = html;
-
-
         html += `
 
             <div
@@ -2196,7 +2757,6 @@
     /* =========================
        ОТПРАВКА ЗАКАЗА
     ========================= */
-
 
     document
         .getElementById("orderForm")
@@ -2274,9 +2834,11 @@
                                 body:
                                     JSON.stringify({
 
-                                        name: name,
+                                        name:
+                                            name,
 
-                                        phone: phone,
+                                        phone:
+                                            phone,
 
                                         address:
                                             address,
@@ -2301,7 +2863,6 @@
                         response.ok &&
                         result.success
                     ) {
-
 
                         document
                             .getElementById(
@@ -2343,7 +2904,6 @@
 
                         updateCart();
 
-
                     } else {
 
                         alert(
@@ -2364,9 +2924,7 @@
 
                 } catch (error) {
 
-                    console.error(
-                        error
-                    );
+                    console.error(error);
 
 
                     alert(
@@ -2397,45 +2955,8 @@
 
 
     /* =========================
-       КНОПКИ «В КОРЗИНУ»
-    ========================= */
-
-
-    document
-        .querySelectorAll(
-            ".add-button"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    function() {
-
-                        addToCart(
-
-                            this.dataset.name,
-
-                            this.dataset.price,
-
-                            this.dataset.image,
-
-                            this.dataset.emoji
-
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-
-    /* =========================
        ПОИСК
     ========================= */
-
 
     const searchInput =
         document.getElementById(
@@ -2527,6 +3048,8 @@
                 event.key === "Escape"
             ) {
 
+                closeProductModal();
+
                 closeCart();
 
                 closeOrderModal();
@@ -2537,8 +3060,9 @@
     );
 
 
+
     /* =========================
-       СТАРТОВАЯ КОРЗИНА
+       СТАРТ
     ========================= */
 
     updateCart();
