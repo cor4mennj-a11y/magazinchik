@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Админ-панель</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f3f5;
+            color: #222;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .username {
+            color: #666;
+        }
+
+        .logout {
+            text-decoration: none;
+            color: white;
+            background: #222;
+            padding: 10px 16px;
+            border-radius: 8px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .order {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .order:last-child {
+            margin-bottom: 0;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .order-number {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .date {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .customer {
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .items {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .item {
+            padding: 5px 0;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .status-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #222;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #000;
+        }
+
+        .empty {
+            text-align: center;
+            color: #888;
+            padding: 30px;
+        }
+
+        .admin-list {
+            margin-bottom: 25px;
+        }
+
+        .admin-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .admin-row:last-child {
+            border-bottom: none;
+        }
+
+        .admin-name {
+            font-weight: bold;
+        }
+
+        .delete-button {
+            background: #c62828;
+        }
+
+        .delete-button:hover {
+            background: #a51f1f;
+        }
+
+        .add-admin {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+        }
+
+        .add-admin input {
+            padding: 11px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 700px) {
+
+            .header {
+                padding: 15px;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .container {
+                margin-top: 20px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .add-admin {
+                grid-template-columns: 1fr;
+            }
+
+            .order-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        🌸 FLOWER SHOP — ADMIN
+    </div>
+
+    <div class="header-right">
+
+        <span class="username">
+            {{ session.get("admin_username") }}
+        </span>
+
+        <a class="logout" href="/admin/logout">
+            Выйти
+        </a>
+
+    </div>
+
+</header>
+
+
+<div class="container">
+
+    <h1>
+        Панель управления
+    </h1>
+
+
+    <!-- ========================= -->
+    <!-- ЗАКАЗЫ -->
+    <!-- ========================= -->
+
+    <div class="card">
+
+        <h2>
+            📦 Заказы
+        </h2>
+
+        {% if orders %}
+
+            {% for order in orders %}
+
+                <div class="order">
+
+                    <div class="order-header">
+
+                        <div class="order-number">
+                            Заказ №{{ order["id"] }}
+                        </div>
+
+                        <div class="date">
+                            {{ order["created_at"] }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="customer">
+
+                        <strong>👤 Имя:</strong>
+                        {{ order["name"] }}
+
+                        <br>
+
+                        <strong>📞 Телефон:</strong>
+                        {{ order["phone"] }}
+
+                        <br>
+
+                        <strong>📍 Адрес:</strong>
+                        {{ order["address"] }}
+
+                    </div>
+
+
+                    <div class="items">
+
+                        <strong>🛍 Товары:</strong>
+
+                        {% set order_items = order["items"] | from_json %}
+
+                        {% for item in order_items %}
+
+                            <div class="item">
+
+                                • {{ item["name"] }}
+
+                                —
+                                {{ item["quantity"] }} шт.
+
+                                ×
+                                {{ item["price"] }} ₽
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div class="total">
+
+                        💰 Итого:
+                        {{ order["total"] }} ₽
+
+                    </div>
+
+
+                    <form
+                        class="status-form"
+                        method="POST"
+                        action="/admin/order/{{ order['id'] }}/status"
+                    >
+
+                        <select name="status">
+
+                            <option
+                                value="Новый"
+                                {% if order["status"] == "Новый" %}selected{% endif %}
+                            >
+                                Новый
+                            </option>
+
+                            <option
+                                value="В обработке"
+                                {% if order["status"] == "В обработке" %}selected{% endif %}
+                            >
+                                В обработке
+                            </option>
+
+                            <option
+                                value="Готов"
+                                {% if order["status"] == "Готов" %}selected{% endif %}
+                            >
+                                Готов
+                            </option>
+
+                            <option
+                                value="Доставляется"
+                                {% if order["status"] == "Доставляется" %}selected{% endif %}
+                            >
+                                Доставляется
+                            </option>
+
+                            <option
+                                value="Выполнен"
+                                {% if order["status"] == "Выполнен" %}selected{% endif %}
+                            >
+                                Выполнен
+                            </option>
+
+                            <option
+                                value="Отменён"
+                                {% if order["status"] == "Отменён" %}selected{% endif %}
+                            >
+                                Отменён
+                            </option>
+
+                        </select>
+
+                        <button type="submit">
+                            Сохранить статус
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty">
+                📭 Заказов пока нет.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- АДМИНИСТРАТОРЫ -->
+    <!-- ========================= -->
+
+    <div class="card">
+
+        <h2>
+            👥 Администраторы
+        </h2>
+
+
+        <div class="admin-list">
+
+            {% for admin in admins %}
+
+                <div class="admin-row">
+
+                    <div class="admin-name">
+                        👤 {{ admin["username"] }}
+                    </div>
+
+
+                    {% if admin["id"] != session.get("admin_id") %}
+
+                        <form
+                            method="POST"
+                            action="/admin/delete-admin/{{ admin['id'] }}"
+                        >
+
+                            <button
+                                type="submit"
+                                class="delete-button"
+                                onclick="return confirm('Удалить этого администратора?');"
+                            >
+                                Удалить
+                            </button>
+
+                        </form>
+
+                    {% else %}
+
+                        <span>
+                            Вы
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <h3>
+            Добавить администратора
+        </h3>
+
+        <form
+            class="add-admin"
+            method="POST"
+            action="/admin/add-admin"
+        >
+
+            <input
+                type="text"
+                name="username"
+                placeholder="Новый логин"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Пароль"
+                required
+            >
+
+            <button type="submit">
+                Добавить
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>
