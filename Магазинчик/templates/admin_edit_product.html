@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Редактирование товара — Цветочный магазин</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family: Arial, sans-serif;
+
+            background: #f7f4f6;
+
+            color: #333;
+        }
+
+
+        /* ШАПКА */
+
+        .header {
+            background: white;
+
+            padding: 18px 30px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            border-bottom: 1px solid #eee;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 10;
+        }
+
+
+        .logo {
+            font-size: 24px;
+
+            font-weight: bold;
+
+            color: #d63384;
+        }
+
+
+        .header-right {
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+        }
+
+
+        .admin-name {
+            color: #666;
+        }
+
+
+        .logout {
+            text-decoration: none;
+
+            color: white;
+
+            background: #dc3545;
+
+            padding: 9px 16px;
+
+            border-radius: 8px;
+        }
+
+
+        .logout:hover {
+            background: #bb2d3b;
+        }
+
+
+        /* ОСНОВНАЯ ОБЛАСТЬ */
+
+        .container {
+            max-width: 850px;
+
+            margin: 30px auto;
+
+            padding: 0 20px;
+        }
+
+
+        .top {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+
+        .top h1 {
+            margin: 0 0 7px;
+
+            font-size: 30px;
+        }
+
+
+        .top p {
+            margin: 0;
+
+            color: #777;
+        }
+
+
+        .back {
+            text-decoration: none;
+
+            background: white;
+
+            color: #d63384;
+
+            padding: 11px 18px;
+
+            border-radius: 9px;
+
+            border: 1px solid #f0d0df;
+
+            font-weight: bold;
+
+            white-space: nowrap;
+        }
+
+
+        .back:hover {
+            background: #fff4f8;
+        }
+
+
+        /* ФОРМА */
+
+        .box {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 30px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .preview {
+            display: flex;
+
+            gap: 20px;
+
+            align-items: center;
+
+            margin-bottom: 30px;
+
+            padding-bottom: 25px;
+
+            border-bottom: 1px solid #eee;
+        }
+
+
+        .preview-image {
+            width: 150px;
+
+            height: 150px;
+
+            border-radius: 14px;
+
+            background: #f8eef3;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            overflow: hidden;
+
+            flex-shrink: 0;
+        }
+
+
+        .preview-image img {
+            width: 100%;
+
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+
+        .preview-emoji {
+            font-size: 65px;
+        }
+
+
+        .preview-info h2 {
+            margin: 0 0 8px;
+
+            font-size: 24px;
+        }
+
+
+        .preview-info p {
+            margin: 0;
+
+            color: #888;
+
+            line-height: 1.5;
+        }
+
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr;
+
+            gap: 20px;
+        }
+
+
+        .field {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 8px;
+        }
+
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+
+        label {
+            font-size: 14px;
+
+            font-weight: bold;
+
+            color: #555;
+        }
+
+
+        input,
+        textarea {
+            width: 100%;
+
+            border: 1px solid #ddd;
+
+            border-radius: 9px;
+
+            padding: 12px 13px;
+
+            font-size: 15px;
+
+            font-family: inherit;
+
+            outline: none;
+        }
+
+
+        input:focus,
+        textarea:focus {
+            border-color: #d63384;
+        }
+
+
+        textarea {
+            min-height: 120px;
+
+            resize: vertical;
+        }
+
+
+        .hint {
+            font-size: 12px;
+
+            color: #999;
+
+            font-weight: normal;
+        }
+
+
+        /* ДОСТУПНОСТЬ */
+
+        .available-box {
+            background: #fff7fa;
+
+            border: 1px solid #f4d7e4;
+
+            border-radius: 10px;
+
+            padding: 15px;
+        }
+
+
+        .checkbox-row {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+
+        .checkbox-row input {
+            width: auto;
+
+            transform: scale(1.2);
+        }
+
+
+        .checkbox-row label {
+            cursor: pointer;
+        }
+
+
+        /* КНОПКИ */
+
+        .buttons {
+            display: flex;
+
+            gap: 12px;
+
+            margin-top: 30px;
+
+            padding-top: 25px;
+
+            border-top: 1px solid #eee;
+        }
+
+
+        .save-button {
+            border: none;
+
+            background: #d63384;
+
+            color: white;
+
+            padding: 13px 24px;
+
+            border-radius: 9px;
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+
+        .save-button:hover {
+            background: #b82d70;
+        }
+
+
+        .cancel-button {
+            text-decoration: none;
+
+            background: #f1f1f1;
+
+            color: #555;
+
+            padding: 13px 24px;
+
+            border-radius: 9px;
+
+            font-weight: bold;
+        }
+
+
+        .cancel-button:hover {
+            background: #e5e5e5;
+        }
+
+
+        /* МОБИЛЬНАЯ ВЕРСИЯ */
+
+        @media (max-width: 650px) {
+
+            .header {
+                padding: 15px;
+            }
+
+
+            .logo {
+                font-size: 19px;
+            }
+
+
+            .admin-name {
+                display: none;
+            }
+
+
+            .container {
+                margin-top: 20px;
+
+                padding: 0 15px;
+            }
+
+
+            .top {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+
+            .top h1 {
+                font-size: 26px;
+            }
+
+
+            .box {
+                padding: 20px;
+            }
+
+
+            .preview {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+
+            .preview-image {
+                width: 100%;
+
+                height: 230px;
+            }
+
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .field.full {
+                grid-column: auto;
+            }
+
+
+            .buttons {
+                flex-direction: column;
+            }
+
+
+            .save-button,
+            .cancel-button {
+                width: 100%;
+
+                text-align: center;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ШАПКА -->
+
+<header class="header">
+
+    <div class="logo">
+        🌸 Цветочный магазин
+    </div>
+
+
+    <div class="header-right">
+
+        <span class="admin-name">
+            👤 {{ session.get('admin_username', 'Администратор') }}
+        </span>
+
+
+        <a
+            href="{{ url_for('admin_logout') }}"
+            class="logout"
+        >
+            Выйти
+        </a>
+
+    </div>
+
+</header>
+
+
+
+<main class="container">
+
+
+    <!-- ЗАГОЛОВОК -->
+
+    <div class="top">
+
+        <div>
+
+            <h1>
+                ✏️ Редактирование товара
+            </h1>
+
+            <p>
+                Измените информацию о букете.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('admin_products') }}"
+            class="back"
+        >
+            ← К товарам
+        </a>
+
+    </div>
+
+
+
+    <div class="box">
+
+
+        <!-- ПРЕДПРОСМОТР -->
+
+        <div class="preview">
+
+
+            <div class="preview-image">
+
+
+                {% if product['image'] %}
+
+                    <img
+                        src="{{ product['image'] }}"
+                        alt="{{ product['name'] }}"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <div
+                        class="preview-emoji"
+                        style="display: none;"
+                    >
+                        {{ product['emoji'] }}
+                    </div>
+
+                {% else %}
+
+                    <div class="preview-emoji">
+                        {{ product['emoji'] }}
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <div class="preview-info">
+
+                <h2>
+                    {{ product['name'] }}
+                </h2>
+
+                <p>
+                    Сейчас редактируется товар
+                    №{{ product['id'] }}.
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ФОРМА -->
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'edit_product',
+                product_id=product['id']
+            ) }}"
+        >
+
+
+            <div class="form-grid">
+
+
+                <!-- НАЗВАНИЕ -->
+
+                <div class="field">
+
+                    <label for="name">
+                        Название товара
+                    </label>
+
+                    <input
+                        id="name"
+                        type="text"
+                        name="name"
+                        value="{{ product['name'] }}"
+                        placeholder="Например: Красные розы"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- ЦЕНА -->
+
+                <div class="field">
+
+                    <label for="price">
+                        Цена, ₽
+                    </label>
+
+                    <input
+                        id="price"
+                        type="number"
+                        name="price"
+                        value="{{ product['price'] }}"
+                        min="0"
+                        step="0.01"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- ОПИСАНИЕ -->
+
+                <div class="field full">
+
+                    <label for="description">
+                        Описание
+                    </label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Описание букета..."
+                    >{{ product['description'] }}</textarea>
+
+                </div>
+
+
+
+                <!-- ФОТО -->
+
+                <div class="field">
+
+                    <label for="image">
+                        Путь к фотографии
+                    </label>
+
+                    <input
+                        id="image"
+                        type="text"
+                        name="image"
+                        value="{{ product['image'] }}"
+                        placeholder="/static/image/buket.jpg"
+                    >
+
+                    <span class="hint">
+                        Например: /static/image/rose.png.jpg
+                    </span>
+
+                </div>
+
+
+
+                <!-- EMOJI -->
+
+                <div class="field">
+
+                    <label for="emoji">
+                        Emoji
+                    </label>
+
+                    <input
+                        id="emoji"
+                        type="text"
+                        name="emoji"
+                        value="{{ product['emoji'] }}"
+                        placeholder="🌹"
+                    >
+
+                    <span class="hint">
+                        Показывается, если нет фотографии.
+                    </span>
+
+                </div>
+
+
+
+                <!-- ДОСТУПНОСТЬ -->
+
+                <div class="field full">
+
+                    <label>
+                        Доступность товара
+                    </label>
+
+
+                    <div class="available-box">
+
+                        <div class="checkbox-row">
+
+                            <input
+                                type="checkbox"
+                                id="available"
+                                name="available"
+                                {% if product['available'] %}
+                                    checked
+                                {% endif %}
+                            >
+
+
+                            <label for="available">
+
+                                ✅ Показывать этот товар
+                                покупателям на сайте
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- КНОПКИ -->
+
+            <div class="buttons">
+
+
+                <button
+                    type="submit"
+                    class="save-button"
+                >
+                    💾 Сохранить изменения
+                </button>
+
+
+                <a
+                    href="{{ url_for('admin_products') }}"
+                    class="cancel-button"
+                >
+                    Отмена
+                </a>
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>
