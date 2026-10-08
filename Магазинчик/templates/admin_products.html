@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Товары — Админ-панель</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f4f6;
+            color: #333;
+        }
+
+
+        /* ШАПКА */
+
+        .header {
+            background: white;
+            padding: 18px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            border-bottom: 1px solid #eee;
+
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d63384;
+        }
+
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+
+        .admin-name {
+            color: #666;
+        }
+
+
+        .logout {
+            text-decoration: none;
+            color: white;
+            background: #dc3545;
+
+            padding: 9px 16px;
+
+            border-radius: 8px;
+        }
+
+
+        .logout:hover {
+            background: #bb2d3b;
+        }
+
+
+        /* ОСНОВНАЯ ОБЛАСТЬ */
+
+        .container {
+            max-width: 1250px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+
+        .top h1 {
+            margin: 0 0 7px;
+            font-size: 30px;
+        }
+
+
+        .top p {
+            margin: 0;
+            color: #777;
+        }
+
+
+        .back {
+            text-decoration: none;
+
+            background: white;
+            color: #d63384;
+
+            padding: 11px 18px;
+
+            border-radius: 9px;
+
+            border: 1px solid #f0d0df;
+
+            font-weight: bold;
+        }
+
+
+        .back:hover {
+            background: #fff4f8;
+        }
+
+
+        /* ДОБАВЛЕНИЕ ТОВАРА */
+
+        .add-box {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 25px;
+
+            margin-bottom: 30px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .add-box h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr;
+
+            gap: 18px;
+        }
+
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+
+        label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+
+
+        input,
+        textarea {
+            width: 100%;
+
+            border: 1px solid #ddd;
+
+            border-radius: 9px;
+
+            padding: 12px 13px;
+
+            font-size: 15px;
+
+            font-family: inherit;
+
+            outline: none;
+        }
+
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+
+        input:focus,
+        textarea:focus {
+            border-color: #d63384;
+        }
+
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin-top: 4px;
+        }
+
+
+        .checkbox-row input {
+            width: auto;
+            transform: scale(1.15);
+        }
+
+
+        .add-button {
+            margin-top: 20px;
+
+            border: none;
+
+            background: #d63384;
+            color: white;
+
+            padding: 12px 22px;
+
+            border-radius: 9px;
+
+            font-size: 15px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+
+        .add-button:hover {
+            background: #b82d70;
+        }
+
+
+        /* СПИСОК ТОВАРОВ */
+
+        .products-title {
+            margin-bottom: 15px;
+        }
+
+
+        .products-title h2 {
+            margin: 0 0 5px;
+            font-size: 22px;
+        }
+
+
+        .products-title p {
+            margin: 0;
+            color: #888;
+        }
+
+
+        .products {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 22px;
+        }
+
+
+        .product {
+            background: white;
+
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .product-top {
+            display: flex;
+            gap: 18px;
+
+            padding: 20px;
+
+            border-bottom: 1px solid #eee;
+        }
+
+
+        .product-image {
+            width: 130px;
+            height: 130px;
+
+            border-radius: 12px;
+
+            background: #f8eef3;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+
+            flex-shrink: 0;
+        }
+
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+
+        .product-emoji {
+            font-size: 55px;
+        }
+
+
+        .product-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+
+        .product-info h3 {
+            margin: 0 0 8px;
+
+            font-size: 21px;
+        }
+
+
+        .description {
+            color: #777;
+
+            font-size: 14px;
+
+            line-height: 1.45;
+
+            margin-bottom: 12px;
+        }
+
+
+        .price {
+            color: #d63384;
+
+            font-size: 21px;
+
+            font-weight: bold;
+        }
+
+
+        .availability {
+            display: inline-block;
+
+            margin-top: 10px;
+
+            padding: 6px 10px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }
+
+
+        .available {
+            background: #e8f7ee;
+            color: #198754;
+        }
+
+
+        .hidden {
+            background: #f1f1f1;
+            color: #777;
+        }
+
+
+        .product-actions {
+            padding: 15px 20px;
+
+            display: flex;
+            gap: 10px;
+        }
+
+
+        .edit-button {
+            flex: 1;
+
+            text-align: center;
+
+            text-decoration: none;
+
+            background: #fff0f6;
+
+            color: #d63384;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+        }
+
+
+        .edit-button:hover {
+            background: #ffe0ed;
+        }
+
+
+        .delete-form {
+            flex: 1;
+        }
+
+
+        .delete-button {
+            width: 100%;
+
+            border: none;
+
+            background: #fff0f0;
+
+            color: #dc3545;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+
+        .delete-button:hover {
+            background: #ffe0e0;
+        }
+
+
+        .empty {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 55px 20px;
+
+            text-align: center;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+
+        .empty-icon {
+            font-size: 55px;
+            margin-bottom: 15px;
+        }
+
+
+        .empty h2 {
+            margin: 0 0 10px;
+        }
+
+
+        .empty p {
+            margin: 0;
+            color: #888;
+        }
+
+
+        /* МОБИЛЬНАЯ ВЕРСИЯ */
+
+        @media (max-width: 900px) {
+
+            .products {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+
+        @media (max-width: 650px) {
+
+            .header {
+                padding: 15px;
+            }
+
+
+            .logo {
+                font-size: 19px;
+            }
+
+
+            .admin-name {
+                display: none;
+            }
+
+
+            .container {
+                margin-top: 20px;
+                padding: 0 15px;
+            }
+
+
+            .top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+
+            .top h1 {
+                font-size: 26px;
+            }
+
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .field.full {
+                grid-column: auto;
+            }
+
+
+            .product-top {
+                flex-direction: column;
+            }
+
+
+            .product-image {
+                width: 100%;
+                height: 220px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ШАПКА -->
+
+<header class="header">
+
+    <div class="logo">
+        🌸 Цветочный магазин
+    </div>
+
+
+    <div class="header-right">
+
+        <span class="admin-name">
+            👤 {{ session.get('admin_username', 'Администратор') }}
+        </span>
+
+
+        <a
+            href="{{ url_for('admin_logout') }}"
+            class="logout"
+        >
+            Выйти
+        </a>
+
+    </div>
+
+</header>
+
+
+
+<main class="container">
+
+
+    <!-- ЗАГОЛОВОК -->
+
+    <div class="top">
+
+        <div>
+
+            <h1>
+                🌸 Товары
+            </h1>
+
+            <p>
+                Добавляйте и изменяйте товары магазина.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('admin_panel') }}"
+            class="back"
+        >
+            ← В админ-панель
+        </a>
+
+    </div>
+
+
+
+    <!-- ДОБАВЛЕНИЕ ТОВАРА -->
+
+    <div class="add-box">
+
+        <h2>
+            ➕ Добавить новый товар
+        </h2>
+
+
+        <form
+            method="POST"
+            action="{{ url_for('add_product') }}"
+        >
+
+            <div class="form-grid">
+
+
+                <!-- НАЗВАНИЕ -->
+
+                <div class="field">
+
+                    <label for="name">
+                        Название товара
+                    </label>
+
+                    <input
+                        id="name"
+                        type="text"
+                        name="name"
+                        placeholder="Например: Букет из роз"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- ЦЕНА -->
+
+                <div class="field">
+
+                    <label for="price">
+                        Цена, ₽
+                    </label>
+
+                    <input
+                        id="price"
+                        type="number"
+                        name="price"
+                        placeholder="3500"
+                        min="0"
+                        step="0.01"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- ОПИСАНИЕ -->
+
+                <div class="field full">
+
+                    <label for="description">
+                        Описание
+                    </label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Описание букета..."
+                    ></textarea>
+
+                </div>
+
+
+
+                <!-- ФОТО -->
+
+                <div class="field">
+
+                    <label for="image">
+                        Путь к фотографии
+                    </label>
+
+                    <input
+                        id="image"
+                        type="text"
+                        name="image"
+                        placeholder="/static/image/buket.jpg"
+                    >
+
+                </div>
+
+
+
+                <!-- EMOJI -->
+
+                <div class="field">
+
+                    <label for="emoji">
+                        Emoji, если фотографии нет
+                    </label>
+
+                    <input
+                        id="emoji"
+                        type="text"
+                        name="emoji"
+                        value="🌸"
+                        placeholder="🌹"
+                    >
+
+                </div>
+
+
+
+                <!-- ДОСТУПНОСТЬ -->
+
+                <div class="field full">
+
+                    <label>
+                        Показывать товар на сайте
+                    </label>
+
+
+                    <div class="checkbox-row">
+
+                        <input
+                            type="checkbox"
+                            id="available"
+                            name="available"
+                            checked
+                        >
+
+                        <label for="available">
+                            Товар доступен покупателям
+                        </label>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="add-button"
+            >
+                ➕ Добавить товар
+            </button>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- СПИСОК -->
+
+    <div class="products-title">
+
+        <h2>
+            Все товары
+        </h2>
+
+        <p>
+            Всего товаров: {{ products|length }}
+        </p>
+
+    </div>
+
+
+
+    {% if products %}
+
+        <div class="products">
+
+
+            {% for product in products %}
+
+                <div class="product">
+
+
+                    <div class="product-top">
+
+
+                        <!-- ИЗОБРАЖЕНИЕ -->
+
+                        <div class="product-image">
+
+                            {% if product['image'] %}
+
+                                <img
+                                    src="{{ product['image'] }}"
+                                    alt="{{ product['name'] }}"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                >
+
+                                <div
+                                    class="product-emoji"
+                                    style="display: none;"
+                                >
+                                    {{ product['emoji'] }}
+                                </div>
+
+                            {% else %}
+
+                                <div class="product-emoji">
+                                    {{ product['emoji'] }}
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+
+                        <!-- ИНФОРМАЦИЯ -->
+
+                        <div class="product-info">
+
+                            <h3>
+                                {{ product['name'] }}
+                            </h3>
+
+
+                            {% if product['description'] %}
+
+                                <div class="description">
+                                    {{ product['description'] }}
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="price">
+                                {{ product['price'] }} ₽
+                            </div>
+
+
+                            {% if product['available'] %}
+
+                                <div class="availability available">
+                                    ✅ Показывается на сайте
+                                </div>
+
+                            {% else %}
+
+                                <div class="availability hidden">
+                                    👁️ Скрыт с сайта
+                                </div>
+
+                            {% endif %}
+
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- КНОПКИ -->
+
+                    <div class="product-actions">
+
+
+                        <a
+                            href="{{ url_for(
+                                'edit_product',
+                                product_id=product['id']
+                            ) }}"
+                            class="edit-button"
+                        >
+                            ✏️ Изменить
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{{ url_for(
+                                'delete_product',
+                                product_id=product['id']
+                            ) }}"
+                            class="delete-form"
+                            onsubmit="return confirm(
+                                'Удалить товар «{{ product['name'] }}»?'
+                            );"
+                        >
+
+                            <button
+                                type="submit"
+                                class="delete-button"
+                            >
+                                🗑️ Удалить
+                            </button>
+
+                        </form>
+
+
+                    </div>
+
+
+                </div>
+
+            {% endfor %}
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <div class="empty">
+
+            <div class="empty-icon">
+                🌷
+            </div>
+
+            <h2>
+                Товаров пока нет
+            </h2>
+
+            <p>
+                Добавьте первый товар с помощью формы выше.
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>
