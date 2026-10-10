@@ -1,104 +1,96 @@
-        flash("Заполни логин и пароль.", "error")
+import os
+import json
+import sqlite3
+import uuid
 
-        return redirect(url_for("admin_admins"))
+import psycopg
+import requests
 
-    conn = get_db()
-
-    try:
-        conn.execute(
-            """
-            INSERT INTO admins
-            (
-                username,
-                password_hash
-            )
-            VALUES (%s, %s)
-            """,
-            (
-                username,
-                generate_password_hash(password)
-            )
-        )
-
-        conn.commit()
-
-        flash("Администратор добавлен.", "success")
-
-    except psycopg.errors.UniqueViolation:
-        conn.rollback()
-
-        flash("Такой логин уже существует.", "error")
-
-    finally:
-        conn.close()
-
-    return redirect(url_for("admin_admins"))
-
-
-# =========================================================
-# УДАЛЕНИЕ АДМИНИСТРАТОРА
-# =========================================================
-
-@app.route(
-    "/admin/delete-admin/<int:admin_id>",
-    methods=["POST"]
+from psycopg.rows import dict_row
+from functools import wraps
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    redirect,
+    url_for,
+    session,
+    flash
 )
-@admin_required
-def delete_admin(admin_id):
-    if admin_id == session.get("admin_id"):
-        flash("Нельзя удалить текущий аккаунт.", "error")
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
+from werkzeug.utils import secure_filename
 
-        return redirect(url_for("admin_admins"))
 
-    conn = get_db()
+# =========================================================
+# НАСТРОЙКИ
+# =========================================================
 
-    try:
-        conn.execute(
-            """
-            DELETE FROM admins
-            WHERE id = %s
-            """,
-            (admin_id,)
+app = Flask(__name__)
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL"
+)
+
+# Старый файл SQLite — только для возможного переноса данных
+LEGACY_SQLITE_DATABASE = os.path.join(
+    BASE_DIR,
+    "shop.db"
+)
+
+UPLOAD_FOLDER = os.path.join(
+    BASE_DIR,
+    "static",
+    "uploads"
+)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "temporary-secret-key"
+)
+
+TELEGRAM_BOT_TOKEN = os.environ.get(
+    "TELEGRAM_BOT_TOKEN"
+)
+
+TELEGRAM_CHAT_ID = "1417232861"
+
+ALLOWED_EXTENSIONS = {
+    "jpg",
+    "jpeg",
+    "png",
+    "webp"
+}
+
+os.makedirs(
+    UPLOAD_FOLDER,
+    exist_ok=True
+)
+
+
+# =========================================================
+# POSTGRESQL
+# =========================================================
+
+def get_db():
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "В Render не задана переменная DATABASE_URL"
         )
 
-        conn.commit()
-
-    finally:
-        conn.close()
-
-    flash("Администратор удалён.", "success")
-
-    return redirect(url_for("admin_admins"))
-
-
-# =========================================================
-# ОШИБКА — ФОТО БОЛЬШЕ 8 МБ
-# =========================================================
-
-@app.errorhandler(413)
-def too_large(error):
-    flash(
-        "Фотография слишком большая. Максимальный размер — 8 МБ.",
-        "error"
-    )
-
-    return redirect(url_for("admin_products"))
-
-
-# =========================================================
-# ИНИЦИАЛИЗАЦИЯ
-# =========================================================
-
-init_db()
-
-
-# =========================================================
-# ЛОКАЛЬНЫЙ ЗАПУСК
-# =========================================================
-
-if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=True
+    return psycopg.connect(
+        DATABASE_URL,
+        row_factory=dict_row,
+        connect_timeout=10,
+        sslmode="require"
     )
