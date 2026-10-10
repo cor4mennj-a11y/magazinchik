@@ -2,3 +2,4 @@ Flask
 gunicorn
 requests
 Werkzeug
+psycopg[binary]
