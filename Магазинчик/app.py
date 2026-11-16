@@ -32,7 +32,12 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32).hex()
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "1417232861")
+
+# Все получатели новых заказов
+TELEGRAM_CHAT_IDS = [
+    "958571482",
+    "1417232861",
+]
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -41,7 +46,9 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE", "true").lower() == "true"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
+    "COOKIE_SECURE", "true"
+).lower() == "true"
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
@@ -310,7 +317,6 @@ def send_order():
             "error": "Корзина пуста или содержит слишком много позиций.",
         }), 400
 
-    # Собираем ID и количество.
     quantities = {}
 
     for item in items:
@@ -420,7 +426,7 @@ def send_order():
         if conn:
             conn.close()
 
-    # Telegram отправляется после сохранения заказа.
+    # Формируем сообщение о заказе
     order_text = (
         f"🌸 НОВЫЙ ЗАКАЗ №{order_id}!\n\n"
         f"👤 Имя: {name}\n"
@@ -437,26 +443,43 @@ def send_order():
 
     order_text += f"\n💰 Итого: {total:g} ₽"
 
+    # Отправляем заказ каждому получателю
     telegram_sent = False
+    sent_count = 0
 
-    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
-        try:
-            response = requests.post(
-                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                json={
-                    "chat_id": TELEGRAM_CHAT_ID,
-                    "text": order_text,
-                },
-                timeout=10,
-            )
+    if TELEGRAM_BOT_TOKEN:
+        for chat_id in TELEGRAM_CHAT_IDS:
+            try:
+                response = requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": order_text,
+                    },
+                    timeout=10,
+                )
 
-            telegram_sent = response.ok
+                if response.ok:
+                    sent_count += 1
+                else:
+                    print(
+                        f"Telegram error for {chat_id}:",
+                        response.text
+                    )
 
-            if not response.ok:
-                print("Telegram error:", response.text)
+            except requests.RequestException as exc:
+                print(
+                    f"Telegram connection error for {chat_id}:",
+                    exc
+                )
 
-        except requests.RequestException as exc:
-            print("Telegram connection error:", exc)
+    telegram_sent = sent_count == len(TELEGRAM_CHAT_IDS)
+
+    if not telegram_sent:
+        print(
+            f"Telegram: отправлено {sent_count} из "
+            f"{len(TELEGRAM_CHAT_IDS)} сообщений."
+        )
 
     return jsonify({
         "success": True,
