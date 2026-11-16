@@ -1253,7 +1253,7 @@
 
     <header>
         <div class="header-inner">
-
+            
             <a href="/" class="logo">
                 <span class="logo-icon">🌸</span>
                 <span>Магазинчик</span>
@@ -1317,9 +1317,6 @@
             </p>
         </div>
 
-
-        <!-- SEARCH -->
-
         <div class="search-box">
             <input
                 type="text"
@@ -1328,9 +1325,6 @@
                 autocomplete="off"
             >
         </div>
-
-
-        <!-- PRODUCTS -->
 
         <div class="products" id="productsGrid">
 
@@ -1381,7 +1375,6 @@
 
                         </div>
 
-
                         <div class="product-content">
 
                             <h3>{{ product.name }}</h3>
@@ -1389,17 +1382,12 @@
                             <div class="product-description">
 
                                 {% if product.description %}
-
                                     {{ product.description }}
-
                                 {% else %}
-
                                     Красивый свежий букет для особенного момента.
-
                                 {% endif %}
 
                             </div>
-
 
                             <div class="product-bottom">
 
@@ -1417,6 +1405,7 @@
                                     onclick="
                                         event.stopPropagation();
                                         addToCart(
+                                            this.closest('.product-card').dataset.id,
                                             this.dataset.name,
                                             this.dataset.price,
                                             this.dataset.image,
@@ -1434,7 +1423,6 @@
                     </article>
 
                 {% endfor %}
-
 
                 <div
                     class="no-products"
@@ -1731,7 +1719,12 @@
         let cart = [];
 
 
-        function addToCart(name, price, image, emoji) {
+        function addToCart(id, name, price, image, emoji) {
+
+            if (!id || !/^\d+$/.test(String(id))) {
+                alert("Не удалось определить товар. Обнови страницу и попробуй снова.");
+                return;
+            }
 
             price = Number(price);
 
@@ -1741,7 +1734,7 @@
             }
 
             const existing = cart.find(
-                item => item.name === name
+                item => String(item.id) === String(id)
             );
 
             if (existing) {
@@ -1751,6 +1744,7 @@
             } else {
 
                 cart.push({
+                    id: String(id),
                     name: name,
                     price: price,
                     image: image || "",
@@ -1984,6 +1978,7 @@
 
         function openProductModalFromCard(card) {
 
+            const id = card.dataset.id || "";
             const name = card.dataset.productName || "";
             const price = card.dataset.productPrice || "0";
             const image = card.dataset.productImage || "";
@@ -1991,6 +1986,7 @@
             const description = card.dataset.productDescription || "";
 
             openProductModal(
+                id,
                 name,
                 price,
                 image,
@@ -2001,7 +1997,7 @@
         }
 
 
-        function openProductModal(name, price, image, emoji, description) {
+        function openProductModal(id, name, price, image, emoji, description) {
 
             const modal = document.getElementById("productModalOverlay");
             const imageContainer = document.getElementById("productModalImage");
@@ -2048,7 +2044,7 @@
 
             addButton.onclick = function() {
 
-                addToCart(name, price, image, emoji);
+                addToCart(id, name, price, image, emoji);
                 closeProductModal();
 
             };
@@ -2220,8 +2216,10 @@
                             name: name,
                             phone: phone,
                             address: address,
-                            items: cart,
-                            total: getCartTotal()
+                            items: cart.map(item => ({
+                                id: item.id,
+                                quantity: item.quantity
+                            }))
 
                         })
 
