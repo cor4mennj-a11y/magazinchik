@@ -11,19 +11,11 @@ import requests
 from psycopg.rows import dict_row
 from psycopg.errors import UniqueViolation
 from flask import (
-    Flask,
-    render_template,
-    request,
-    jsonify,
-    redirect,
-    url_for,
-    session,
-    flash,
-    make_response,
+    Flask, render_template, request, jsonify,
+    redirect, url_for, session, flash, make_response
 )
 from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash,
+    generate_password_hash, check_password_hash
 )
 from werkzeug.utils import secure_filename
 
@@ -37,34 +29,30 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-SECRET_KEY = os.environ.get("SECRET_KEY")
-
-app.secret_key = SECRET_KEY or os.urandom(32).hex()
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32).hex()
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = "1417232861"
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "1417232861")
 
-UPLOAD_FOLDER = os.path.join(
-    BASE_DIR, "static", "uploads"
-)
-
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE", "true").lower() == "true"
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
 
 # =========================================================
-# ПОДКЛЮЧЕНИЕ SUPABASE / POSTGRESQL
+# БАЗА ДАННЫХ
 # =========================================================
 
 def get_db():
     if not DATABASE_URL:
-        raise RuntimeError(
-            "В Render не задана переменная DATABASE_URL"
-        )
+        raise RuntimeError("В Render не задана переменная DATABASE_URL")
 
     return psycopg.connect(
         DATABASE_URL,
@@ -73,10 +61,6 @@ def get_db():
         sslmode="require",
     )
 
-
-# =========================================================
-# ИНИЦИАЛИЗАЦИЯ БАЗЫ
-# =========================================================
 
 def init_db():
     conn = get_db()
@@ -119,7 +103,6 @@ def init_db():
 
         conn.commit()
 
-        # Начальные товары добавляются только в пустой каталог.
         count = conn.execute(
             "SELECT COUNT(*) AS count FROM products"
         ).fetchone()["count"]
@@ -160,7 +143,6 @@ def init_db():
                 ),
             ]
 
-            # В psycopg executemany вызывается у курсора.
             with conn.cursor() as cur:
                 cur.executemany("""
                     INSERT INTO products
@@ -170,7 +152,6 @@ def init_db():
 
             conn.commit()
 
-        # Создаём администратора, если его ещё нет.
         username = os.environ.get("ADMIN_USERNAME")
         password = os.environ.get("ADMIN_PASSWORD")
 
@@ -190,7 +171,7 @@ def init_db():
                 ))
                 conn.commit()
 
-        print("Supabase: таблицы проверены, база готова.")
+        print("Supabase: база данных готова.")
 
     finally:
         conn.close()
@@ -204,8 +185,7 @@ def allowed_file(filename):
     return (
         bool(filename)
         and "." in filename
-        and filename.rsplit(".", 1)[1].lower()
-        in ALLOWED_EXTENSIONS
+        and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
     )
 
 
@@ -230,9 +210,7 @@ def save_uploaded_file(file):
 
 
 def delete_uploaded_file(image_path):
-    if not image_path or not image_path.startswith(
-        "/static/uploads/"
-    ):
+    if not image_path or not image_path.startswith("/static/uploads/"):
         return
 
     filename = os.path.basename(image_path)
@@ -259,7 +237,6 @@ def admin_required(view):
         if "admin_id" not in session:
             return redirect(url_for("admin_login"))
         return view(*args, **kwargs)
-
     return wrapped_view
 
 
@@ -275,7 +252,6 @@ def render_admin_error(message, endpoint="admin_products"):
 @app.route("/")
 def home():
     conn = get_db()
-
     try:
         products = conn.execute("""
             SELECT *
@@ -297,7 +273,8 @@ def robots_txt():
 
 
 # =========================================================
-# СОХРАНЕНИЕ ЗАКАЗА
+# ОФОРМЛЕНИЕ ЗАКАЗА
+# ЦЕНЫ БЕРУТСЯ ТОЛЬКО ИЗ БАЗЫ ДАННЫХ
 # =========================================================
 
 @app.route("/send-order", methods=["POST"])
@@ -307,93 +284,143 @@ def send_order():
     if not isinstance(data, dict):
         return jsonify({
             "success": False,
-            "error": "Не удалось получить данные заказа",
+            "error": "Не удалось получить данные заказа.",
         }), 400
 
     name = str(data.get("name", "")).strip()
     phone = str(data.get("phone", "")).strip()
     address = str(data.get("address", "")).strip()
-    items = data.get("items", [])
+    items = data.get("items")
 
     if not name or not phone or not address:
         return jsonify({
             "success": False,
-            "error": "Заполните имя, телефон и адрес",
+            "error": "Заполните имя, телефон и адрес.",
         }), 400
 
-    if not isinstance(items, list) or not items:
+    if len(name) > 150 or len(phone) > 50 or len(address) > 1000:
         return jsonify({
             "success": False,
-            "error": "Корзина пуста",
+            "error": "Проверьте длину введённых данных.",
         }), 400
 
+    if not isinstance(items, list) or not items or len(items) > 50:
+        return jsonify({
+            "success": False,
+            "error": "Корзина пуста или содержит слишком много позиций.",
+        }), 400
+
+    # Собираем ID и количество.
+    quantities = {}
+
+    for item in items:
+        if not isinstance(item, dict):
+            return jsonify({
+                "success": False,
+                "error": "Некорректные данные товара.",
+            }), 400
+
+        try:
+            product_id = int(item.get("id"))
+            quantity = int(item.get("quantity"))
+        except (ValueError, TypeError, OverflowError):
+            return jsonify({
+                "success": False,
+                "error": "Некорректный товар в корзине.",
+            }), 400
+
+        if product_id <= 0 or quantity < 1 or quantity > 100:
+            return jsonify({
+                "success": False,
+                "error": "Некорректное количество товара.",
+            }), 400
+
+        quantities[product_id] = quantities.get(product_id, 0) + quantity
+
+        if quantities[product_id] > 100:
+            return jsonify({
+                "success": False,
+                "error": "Слишком большое количество одного товара.",
+            }), 400
+
+    product_ids = list(quantities.keys())
+
+    conn = None
+
     try:
-        # Пересчитываем сумму по данным корзины.
-        # Для настоящей оплаты цены необходимо проверять
-        # по каталогу на сервере.
+        conn = get_db()
+
+        products = conn.execute("""
+            SELECT id, name, price
+            FROM products
+            WHERE id = ANY(%s)
+              AND available = 1
+        """, (product_ids,)).fetchall()
+
+        products_by_id = {
+            int(product["id"]): product
+            for product in products
+        }
+
+        if len(products_by_id) != len(product_ids):
+            return jsonify({
+                "success": False,
+                "error": "Один из товаров больше недоступен. Обновите страницу и попробуйте снова.",
+            }), 400
+
         total = Decimal("0.00")
         clean_items = []
 
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-
-            try:
-                quantity = int(item.get("quantity", 1))
-                price = Decimal(str(item.get("price", 0)))
-            except (ValueError, TypeError, InvalidOperation):
-                continue
-
-            if quantity < 1 or quantity > 100:
-                continue
+        for product_id, quantity in quantities.items():
+            product = products_by_id[product_id]
+            price = Decimal(str(product["price"]))
 
             if not price.is_finite() or price < 0:
-                continue
+                raise ValueError("Некорректная цена товара в базе данных.")
+
+            line_total = price * quantity
+            total += line_total
 
             clean_items.append({
-                "name": str(item.get("name", "Товар"))[:200],
+                "id": product_id,
+                "name": product["name"],
                 "quantity": quantity,
                 "price": float(price),
             })
-            total += price * quantity
 
-        if not clean_items:
-            return jsonify({
-                "success": False,
-                "error": "В корзине нет корректных товаров",
-            }), 400
+        result = conn.execute("""
+            INSERT INTO orders
+            (name, phone, address, items, total, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            name,
+            phone,
+            address,
+            json.dumps(clean_items, ensure_ascii=False),
+            total,
+            "Новый",
+        )).fetchone()
 
-        conn = get_db()
-
-        try:
-            result = conn.execute("""
-                INSERT INTO orders
-                (name, phone, address, items, total, status)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id
-            """, (
-                name,
-                phone,
-                address,
-                json.dumps(clean_items, ensure_ascii=False),
-                total,
-                "Новый",
-            )).fetchone()
-
-            order_id = result["id"]
-            conn.commit()
-
-        finally:
-            conn.close()
+        order_id = result["id"]
+        conn.commit()
 
     except Exception as exc:
+        if conn:
+            conn.rollback()
+
         print("Ошибка сохранения заказа:", repr(exc))
+
         return jsonify({
             "success": False,
             "error": "Не удалось сохранить заказ. Попробуйте позже.",
         }), 500
 
-    # Уведомление в Telegram отправляется после сохранения заказа.
+    finally:
+        if conn:
+            conn.close()
+
+    # Telegram отправляется после сохранения заказа.
     order_text = (
         f"🌸 НОВЫЙ ЗАКАЗ №{order_id}!\n\n"
         f"👤 Имя: {name}\n"
@@ -412,7 +439,7 @@ def send_order():
 
     telegram_sent = False
 
-    if TELEGRAM_BOT_TOKEN:
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         try:
             response = requests.post(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -456,7 +483,6 @@ def admin_login():
             )
 
         conn = get_db()
-
         try:
             admin = conn.execute("""
                 SELECT *
@@ -466,17 +492,16 @@ def admin_login():
         finally:
             conn.close()
 
-        if admin and check_password_hash(
-            admin["password_hash"], password
-        ):
+        if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
             session["admin_id"] = admin["id"]
             session["admin_username"] = admin["username"]
+            session.permanent = True
             return redirect(url_for("admin_panel"))
 
         return render_template(
             "admin_login.html",
-            error="Неверный логин или пароль",
+            error="Неверный логин или пароль.",
         )
 
     return render_template("admin_login.html")
@@ -584,7 +609,6 @@ def admin_panel():
 @admin_required
 def admin_orders():
     conn = get_db()
-
     try:
         orders = conn.execute("""
             SELECT *
@@ -597,19 +621,12 @@ def admin_orders():
     return render_template("admin_orders.html", orders=orders)
 
 
-@app.route(
-    "/admin/order/<int:order_id>/status",
-    methods=["POST"],
-)
+@app.route("/admin/order/<int:order_id>/status", methods=["POST"])
 @admin_required
 def update_order_status(order_id):
     allowed_statuses = [
-        "Новый",
-        "В обработке",
-        "Готов",
-        "Доставляется",
-        "Выполнен",
-        "Отменён",
+        "Новый", "В обработке", "Готов",
+        "Доставляется", "Выполнен", "Отменён",
     ]
 
     status = request.form.get("status", "Новый")
@@ -618,7 +635,6 @@ def update_order_status(order_id):
         status = "Новый"
 
     conn = get_db()
-
     try:
         conn.execute("""
             UPDATE orders
@@ -640,7 +656,6 @@ def update_order_status(order_id):
 @admin_required
 def admin_products():
     conn = get_db()
-
     try:
         products = conn.execute("""
             SELECT *
@@ -650,10 +665,7 @@ def admin_products():
     finally:
         conn.close()
 
-    return render_template(
-        "admin_products.html",
-        products=products,
-    )
+    return render_template("admin_products.html", products=products)
 
 
 # =========================================================
@@ -676,24 +688,22 @@ def add_product():
     except (InvalidOperation, ValueError):
         return render_admin_error("Укажи корректную цену.")
 
-    available = 1 if request.form.get("available") == "on" else 0
-
     if not name:
         return render_admin_error("Укажи название товара.")
+
+    available = 1 if request.form.get("available") == "on" else 0
 
     image = ""
     uploaded_file = request.files.get("image")
 
     if uploaded_file and uploaded_file.filename:
         image = save_uploaded_file(uploaded_file)
-
         if not image:
             return render_admin_error(
                 "Формат фото должен быть JPG, JPEG, PNG или WEBP."
             )
 
     conn = get_db()
-
     try:
         conn.execute("""
             INSERT INTO products
@@ -712,10 +722,7 @@ def add_product():
 # РЕДАКТИРОВАНИЕ ТОВАРА
 # =========================================================
 
-@app.route(
-    "/admin/products/<int:product_id>/edit",
-    methods=["GET", "POST"],
-)
+@app.route("/admin/products/<int:product_id>/edit", methods=["GET", "POST"])
 @admin_required
 def edit_product(product_id):
     conn = get_db()
@@ -744,20 +751,13 @@ def edit_product(product_id):
                     raise InvalidOperation
             except (InvalidOperation, ValueError):
                 flash("Укажи корректную цену.", "error")
-                return redirect(url_for(
-                    "edit_product", product_id=product_id
-                ))
+                return redirect(url_for("edit_product", product_id=product_id))
 
             if not name:
                 flash("Укажи название товара.", "error")
-                return redirect(url_for(
-                    "edit_product", product_id=product_id
-                ))
+                return redirect(url_for("edit_product", product_id=product_id))
 
-            available = (
-                1 if request.form.get("available") == "on" else 0
-            )
-
+            available = 1 if request.form.get("available") == "on" else 0
             image = product["image"] or ""
 
             if request.form.get("remove_image") == "on":
@@ -774,9 +774,7 @@ def edit_product(product_id):
                         "Формат фото должен быть JPG, JPEG, PNG или WEBP.",
                         "error",
                     )
-                    return redirect(url_for(
-                        "edit_product", product_id=product_id
-                    ))
+                    return redirect(url_for("edit_product", product_id=product_id))
 
                 delete_uploaded_file(image)
                 image = new_image
@@ -791,13 +789,8 @@ def edit_product(product_id):
                     available = %s
                 WHERE id = %s
             """, (
-                name,
-                description,
-                price,
-                image,
-                emoji,
-                available,
-                product_id,
+                name, description, price,
+                image, emoji, available, product_id,
             ))
             conn.commit()
 
@@ -807,20 +800,14 @@ def edit_product(product_id):
     finally:
         conn.close()
 
-    return render_template(
-        "admin_edit_product.html",
-        product=product,
-    )
+    return render_template("admin_edit_product.html", product=product)
 
 
 # =========================================================
 # УДАЛЕНИЕ ТОВАРА
 # =========================================================
 
-@app.route(
-    "/admin/products/<int:product_id>/delete",
-    methods=["POST"],
-)
+@app.route("/admin/products/<int:product_id>/delete", methods=["POST"])
 @admin_required
 def delete_product(product_id):
     conn = get_db()
@@ -854,7 +841,6 @@ def delete_product(product_id):
 @admin_required
 def admin_admins():
     conn = get_db()
-
     try:
         admins = conn.execute("""
             SELECT id, username
@@ -864,10 +850,7 @@ def admin_admins():
     finally:
         conn.close()
 
-    return render_template(
-        "admin_admins.html",
-        admins=admins,
-    )
+    return render_template("admin_admins.html", admins=admins)
 
 
 @app.route("/admin/add-admin", methods=["POST"])
@@ -877,10 +860,7 @@ def add_admin():
     password = request.form.get("password", "")
 
     if not username or not password:
-        return render_admin_error(
-            "Заполни логин и пароль.",
-            "admin_admins",
-        )
+        return render_admin_error("Заполни логин и пароль.", "admin_admins")
 
     conn = get_db()
 
@@ -888,18 +868,12 @@ def add_admin():
         conn.execute("""
             INSERT INTO admins (username, password_hash)
             VALUES (%s, %s)
-        """, (
-            username,
-            generate_password_hash(password),
-        ))
+        """, (username, generate_password_hash(password)))
         conn.commit()
 
     except UniqueViolation:
         conn.rollback()
-        return render_admin_error(
-            "Такой логин уже существует.",
-            "admin_admins",
-        )
+        return render_admin_error("Такой логин уже существует.", "admin_admins")
 
     finally:
         conn.close()
@@ -908,10 +882,7 @@ def add_admin():
     return redirect(url_for("admin_admins"))
 
 
-@app.route(
-    "/admin/delete-admin/<int:admin_id>",
-    methods=["POST"],
-)
+@app.route("/admin/delete-admin/<int:admin_id>", methods=["POST"])
 @admin_required
 def delete_admin(admin_id):
     if admin_id == session.get("admin_id"):
@@ -921,7 +892,6 @@ def delete_admin(admin_id):
         )
 
     conn = get_db()
-
     try:
         conn.execute(
             "DELETE FROM admins WHERE id = %s",
@@ -936,7 +906,7 @@ def delete_admin(admin_id):
 
 
 # =========================================================
-# ОБРАБОТКА СЛИШКОМ БОЛЬШИХ ФОТО
+# ОШИБКИ И ПРОВЕРКА СЕРВЕРА
 # =========================================================
 
 @app.errorhandler(413)
@@ -948,23 +918,32 @@ def too_large(error):
     return redirect(url_for("admin_products"))
 
 
-# =========================================================
-# ПРОВЕРКА ЗАПУСКА
-# =========================================================
-
 @app.route("/health")
 def health():
+    conn = None
+
     try:
         conn = get_db()
         conn.execute("SELECT 1")
-        conn.close()
-        return jsonify({"status": "ok", "database": "connected"})
+        return jsonify({
+            "status": "ok",
+            "database": "connected",
+        })
     except Exception as exc:
         print("Health check error:", repr(exc))
-        return jsonify({"status": "error", "database": "unavailable"}), 500
+        return jsonify({
+            "status": "error",
+            "database": "unavailable",
+        }), 500
+    finally:
+        if conn:
+            conn.close()
 
 
-# Создаём таблицы при старте приложения.
+# =========================================================
+# ЗАПУСК
+# =========================================================
+
 init_db()
 
 
